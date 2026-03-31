@@ -1,0 +1,9 @@
+{
+  "name": "pewplay",
+  "version": "2.0.0",
+  "description": "Static site generator for PewPlay — free online games arcade",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "dependencies": {}
+}
