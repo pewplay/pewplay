@@ -9,34 +9,35 @@
     html, body { height: 100%; overflow: hidden; }
     iframe {
       position: fixed;
-      top: 48px; left: 0;
+      top: var(--header-h); left: 0;
       width: 100%;
-      height: calc(100% - 48px);
+      height: calc(100% - var(--header-h));
       border: none;
       background: #000;
     }
-    .fullscreen-btn {
-      margin-left: auto;
+    .header-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      background: rgba(255,255,255,.1);
-      color: #fff;
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--text-2);
       border: none;
       cursor: pointer;
-      transition: background .2s;
+      transition: background .2s, color .2s, transform .15s;
     }
-    .fullscreen-btn:hover { background: rgba(255,255,255,.2); }
-    .fullscreen-btn svg { width: 16px; height: 16px; }
+    .header-btn:hover { background: var(--accent); color: #fff; transform: scale(1.05); }
+    .header-btn svg { width: 16px; height: 16px; }
   </style>
 </head>
 <body>
   <header>
     <a href="/" class="back-btn" aria-label="Back to home">&#8592;</a>
     <span class="game-title">{{TITLE}}</span>
-    <button class="fullscreen-btn" id="fs-btn" aria-label="Fullscreen" title="Fullscreen">
+    <span class="spacer"></span>
+    {{THEME_TOGGLE}}
+    <button class="header-btn" id="fs-btn" aria-label="Fullscreen" title="Fullscreen">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
       </svg>
@@ -52,5 +53,6 @@
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
     });
   </script>
+  {{THEME_SCRIPT}}
 </body>
 </html>

@@ -32,39 +32,164 @@ function prettifySlug(slug) {
 }
 
 // ============================================================
-//  CSS CONDIVISO
+//  CSS CONDIVISO — LIGHT/DARK MODE CON CSS VARIABLES
 // ============================================================
 const COMMON_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+  /* ── TEMA ───────────────────────────────────── */
+  :root {
+    --accent: #7C5CFC;
+    --accent-soft: rgba(124,92,252,.12);
+    --accent-glow: rgba(124,92,252,.35);
+    --radius: 14px;
+    --header-h: 52px;
+    --font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Light (default) */
+    --bg:       #f4f3f8;
+    --bg-card:  #ffffff;
+    --bg-header: #ffffff;
+    --bg-input: #eeedf3;
+    --border:   #e0dfe6;
+    --text:     #1a1a2e;
+    --text-2:   #6b6b80;
+    --text-3:   #9d9db0;
+    --shadow-card: 0 2px 12px rgba(0,0,0,.06);
+    --shadow-card-hover: 0 12px 32px rgba(124,92,252,.15);
+    --header-shadow: 0 1px 0 var(--border);
+    --overlay-name: linear-gradient(transparent 40%, rgba(0,0,0,.75));
+    color-scheme: light dark;
+  }
+
+  /* Dark */
+  [data-theme="dark"] {
+    --bg:       #0e0e14;
+    --bg-card:  #1a1a26;
+    --bg-header: #141420;
+    --bg-input: #1e1e2e;
+    --border:   #2a2a3c;
+    --text:     #e8e8f0;
+    --text-2:   #8888a0;
+    --text-3:   #555568;
+    --shadow-card: 0 2px 12px rgba(0,0,0,.25);
+    --shadow-card-hover: 0 12px 32px rgba(124,92,252,.2);
+    --header-shadow: 0 1px 0 rgba(255,255,255,.06);
+    --overlay-name: linear-gradient(transparent 30%, rgba(0,0,0,.88));
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:       #0e0e14;
+      --bg-card:  #1a1a26;
+      --bg-header: #141420;
+      --bg-input: #1e1e2e;
+      --border:   #2a2a3c;
+      --text:     #e8e8f0;
+      --text-2:   #8888a0;
+      --text-3:   #555568;
+      --shadow-card: 0 2px 12px rgba(0,0,0,.25);
+      --shadow-card-hover: 0 12px 32px rgba(124,92,252,.2);
+      --header-shadow: 0 1px 0 rgba(255,255,255,.06);
+      --overlay-name: linear-gradient(transparent 30%, rgba(0,0,0,.88));
+    }
+  }
+
+  /* ── RESET ──────────────────────────────────── */
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    background:#0f0f13;color:#e0e0e0;-webkit-font-smoothing:antialiased;
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    transition: background .3s, color .3s;
   }
-  /* HEADER */
+
+  /* ── HEADER ─────────────────────────────────── */
   header{
-    background:linear-gradient(135deg,#1a1a2e,#16213e);
-    color:#fff;height:48px;display:flex;align-items:center;
-    padding:0 16px;position:fixed;top:0;left:0;right:0;
-    z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,.4);gap:12px;
+    background:var(--bg-header);
+    color:var(--text);
+    height:var(--header-h);
+    display:flex;align-items:center;
+    padding:0 20px;position:fixed;
+    top:0;left:0;right:0;z-index:1000;
+    box-shadow:var(--header-shadow);
+    gap:12px;
+    transition: background .3s, box-shadow .3s;
   }
   header .logo{
-    display:flex;align-items:center;gap:8px;
-    text-decoration:none;color:#fff;font-weight:700;font-size:18px;
+    display:flex;align-items:center;gap:10px;
+    text-decoration:none;color:var(--text);
+    font-weight:800;font-size:19px;letter-spacing:-.3px;
   }
-  header .logo img{width:28px;height:28px;border-radius:6px}
+  header .logo img{width:30px;height:30px;border-radius:8px}
   header .back-btn{
     display:inline-flex;align-items:center;justify-content:center;
-    width:32px;height:32px;border-radius:8px;
-    background:rgba(255,255,255,.1);color:#fff;
-    text-decoration:none;font-size:18px;transition:background .2s;
+    width:34px;height:34px;border-radius:10px;
+    background:var(--accent-soft);color:var(--accent);
+    text-decoration:none;font-size:18px;
+    transition:background .2s,transform .15s;
   }
-  header .back-btn:hover{background:rgba(255,255,255,.2)}
+  header .back-btn:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
   header .game-title{
     font-weight:600;font-size:15px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  main{margin-top:48px}
+  header .spacer{flex:1}
+
+  /* ── THEME TOGGLE ───────────────────────────── */
+  .theme-toggle{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:34px;height:34px;border-radius:10px;
+    background:var(--accent-soft);
+    border:none;cursor:pointer;
+    color:var(--text-2);
+    transition:background .2s,color .2s,transform .15s;
+  }
+  .theme-toggle:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
+  .theme-toggle svg{width:18px;height:18px}
+  .theme-toggle .icon-sun{display:none}
+  .theme-toggle .icon-moon{display:block}
+  [data-theme="dark"] .theme-toggle .icon-sun{display:block}
+  [data-theme="dark"] .theme-toggle .icon-moon{display:none}
+  @media(prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .theme-toggle .icon-sun{display:block}
+    :root:not([data-theme="light"]) .theme-toggle .icon-moon{display:none}
+  }
+
+  main{margin-top:var(--header-h)}
+`;
+
+// ── THEME TOGGLE BUTTON HTML ──
+const THEME_TOGGLE_HTML = `
+  <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
+    </svg>
+    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+  </button>
+`;
+
+// ── THEME TOGGLE SCRIPT ──
+const THEME_TOGGLE_SCRIPT = `
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  var stored = localStorage.getItem('theme');
+  if (stored) root.setAttribute('data-theme', stored);
+
+  btn.addEventListener('click', function(){
+    var isDark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    var next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+})();
+<\/script>
 `;
 
 // ============================================================
@@ -318,7 +443,9 @@ async function main() {
           .replace('{{JSON_LD}}',    gameJsonLd(game))
           .replace('{{STYLES}}',     COMMON_STYLES)
           .replace('{{SITE_NAME}}',  esc(SITE_NAME))
-          .replace(/{{TITLE}}/g,     esc(seo.title));
+          .replace(/{{TITLE}}/g,     esc(seo.title))
+          .replace('{{THEME_TOGGLE}}', THEME_TOGGLE_HTML)
+          .replace('{{THEME_SCRIPT}}', THEME_TOGGLE_SCRIPT);
 
         fs.writeFileSync(origIndex, html);
         console.log(`   ✓ wrapper → ${gameUrl}`);
@@ -351,7 +478,9 @@ async function main() {
     .replace('{{SITE_TAGLINE}}', esc(SITE_TAGLINE))
     .replace('{{GAMES_COUNT}}',  String(gamesData.length))
     .replace('{{GAMES_LIST}}',   cardsHtml)
-    .replace('{{GAMES_JSON}}',   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img }))));
+    .replace('{{GAMES_JSON}}',   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img }))))
+    .replace('{{THEME_TOGGLE}}', THEME_TOGGLE_HTML)
+    .replace('{{THEME_SCRIPT}}', THEME_TOGGLE_SCRIPT);
 
   fs.writeFileSync(path.join(OUTPUT_DIR, 'index.html'), indexHtml);
 
@@ -383,16 +512,21 @@ async function main() {
   ${headTags('Page Not Found | ' + SITE_NAME, '')}
   <style>
     ${COMMON_STYLES}
-    .e{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 48px);text-align:center;padding:20px}
-    .e h1{font-size:72px;color:${THEME_COLOR};margin-bottom:8px}
-    .e p{font-size:18px;color:#888;margin-bottom:24px}
-    .e a{display:inline-block;padding:12px 28px;background:${THEME_COLOR};color:#fff;text-decoration:none;border-radius:10px;font-weight:600;transition:opacity .2s}
-    .e a:hover{opacity:.85}
+    .e{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - var(--header-h));text-align:center;padding:20px}
+    .e h1{font-size:80px;font-weight:800;color:var(--accent);margin-bottom:4px;letter-spacing:-2px}
+    .e p{font-size:16px;color:var(--text-2);margin-bottom:28px;font-weight:400}
+    .e a{display:inline-block;padding:12px 32px;background:var(--accent);color:#fff;text-decoration:none;border-radius:12px;font-weight:600;font-family:var(--font);font-size:14px;transition:transform .15s,box-shadow .2s}
+    .e a:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--accent-glow)}
   </style>
 </head>
 <body>
-  <header><a href="/" class="logo"><img src="/icon-32.png" alt="">${SITE_NAME}</a></header>
+  <header>
+    <a href="/" class="logo"><img src="/icon-32.png" alt="">${SITE_NAME}</a>
+    <span class="spacer"></span>
+    ${THEME_TOGGLE_HTML}
+  </header>
   <main class="e"><h1>404</h1><p>This page doesn't exist.</p><a href="/">Back to Home</a></main>
+  ${THEME_TOGGLE_SCRIPT}
 </body>
 </html>`);
 
