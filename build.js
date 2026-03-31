@@ -437,15 +437,15 @@ async function main() {
         fs.renameSync(origIndex, path.join(gameDir, 'internal.html'));
 
         const html = gameTemplate
-          .replace('{{LANG}}',      SITE_LANG)
-          .replace('{{HEAD_TAGS}}',  headTags(pageTitle, canonical))
-          .replace('{{SEO_TAGS}}',   seoTags(seo.title, seo.description, imgPath, canonical, 'game', seo.keywords))
-          .replace('{{JSON_LD}}',    gameJsonLd(game))
-          .replace('{{STYLES}}',     COMMON_STYLES)
-          .replace('{{SITE_NAME}}',  esc(SITE_NAME))
-          .replace(/{{TITLE}}/g,     esc(seo.title))
-          .replace('{{THEME_TOGGLE}}', THEME_TOGGLE_HTML)
-          .replace('{{THEME_SCRIPT}}', THEME_TOGGLE_SCRIPT);
+          .replace(/{{LANG}}/g,      SITE_LANG)
+          .replace(/{{HEAD_TAGS}}/g,  headTags(pageTitle, canonical))
+          .replace(/{{SEO_TAGS}}/g,   seoTags(seo.title, seo.description, imgPath, canonical, 'game', seo.keywords))
+          .replace(/{{JSON_LD}}/g,    gameJsonLd(game))
+          .replace(/{{STYLES}}/g,     COMMON_STYLES)
+          .replace(/{{SITE_NAME}}/g,  esc(SITE_NAME))
+          .replace(/{{TITLE}}/g,      esc(seo.title))
+          .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
+          .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
 
         fs.writeFileSync(origIndex, html);
         console.log(`   ✓ wrapper → ${gameUrl}`);
@@ -469,18 +469,18 @@ async function main() {
 
   const homeTitle = `${SITE_NAME} — ${SITE_TAGLINE}`;
   const indexHtml = indexTemplate
-    .replace('{{LANG}}',         SITE_LANG)
-    .replace('{{HEAD_TAGS}}',    headTags(homeTitle, SITE_URL + '/'))
-    .replace('{{SEO_TAGS}}',     seoTags(homeTitle, SITE_DESC, '/icon-512.png', SITE_URL + '/'))
-    .replace('{{JSON_LD}}',      homeJsonLd(gamesData))
-    .replace('{{STYLES}}',       COMMON_STYLES)
-    .replace('{{SITE_NAME}}',    esc(SITE_NAME))
-    .replace('{{SITE_TAGLINE}}', esc(SITE_TAGLINE))
-    .replace('{{GAMES_COUNT}}',  String(gamesData.length))
-    .replace('{{GAMES_LIST}}',   cardsHtml)
-    .replace('{{GAMES_JSON}}',   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img }))))
-    .replace('{{THEME_TOGGLE}}', THEME_TOGGLE_HTML)
-    .replace('{{THEME_SCRIPT}}', THEME_TOGGLE_SCRIPT);
+    .replace(/{{LANG}}/g,         SITE_LANG)
+    .replace(/{{HEAD_TAGS}}/g,    headTags(homeTitle, SITE_URL + '/'))
+    .replace(/{{SEO_TAGS}}/g,     seoTags(homeTitle, SITE_DESC, '/icon-512.png', SITE_URL + '/'))
+    .replace(/{{JSON_LD}}/g,      homeJsonLd(gamesData))
+    .replace(/{{STYLES}}/g,       COMMON_STYLES)
+    .replace(/{{SITE_NAME}}/g,    esc(SITE_NAME))
+    .replace(/{{SITE_TAGLINE}}/g, esc(SITE_TAGLINE))
+    .replace(/{{GAMES_COUNT}}/g,  String(gamesData.length))
+    .replace(/{{GAMES_LIST}}/g,   cardsHtml)
+    .replace(/{{GAMES_JSON}}/g,   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img }))))
+    .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
+    .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
 
   fs.writeFileSync(path.join(OUTPUT_DIR, 'index.html'), indexHtml);
 
