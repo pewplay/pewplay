@@ -53,10 +53,8 @@ All settings are controlled via environment variables (or edit the top of `build
 
 1. Create a repo in your organization with an `index.html` at the root
 2. Add the topic **`web-game`** to the repo
-3. *(Optional)* Add images — the builder auto-discovers them in this priority order:
-   `og.png` → `preview.png` → `screenshot.png` → `thumb.png` → `cover.png` → `banner.png` (also `.jpg` / `.webp`)
-4. *(Optional)* Add `screenshot-1.png`, `screenshot-2.png`, etc. for rich JSON-LD results
-5. *(Optional)* Add a `seo.json` for full control over SEO:
+3. Add a **`preview.png`** (512×512 recommended) for the card thumbnail
+4. Add a **`game.json`** with your game's metadata:
 
 ```json
 {
@@ -65,7 +63,6 @@ All settings are controlled via environment variables (or edit the top of `build
   "keywords": ["arcade", "shooter", "retro", "space"],
   "category": "Arcade",
   "author": "Studio Name",
-  "image": "og.png",
   "playMode": "SinglePlayer"
 }
 ```
@@ -79,10 +76,11 @@ All fields are optional — missing ones get smart defaults from the repo name a
 | `keywords`    | `[]`                             | `<meta name="keywords">` + JSON-LD     |
 | `category`    | `"Game"`                         | JSON-LD `applicationCategory`          |
 | `author`      | —                                | JSON-LD `author`                       |
-| `image`       | Auto-discovered                  | Relative path to OG image in the repo  |
 | `playMode`    | `"SinglePlayer"`                 | `"SinglePlayer"` or `"MultiPlayer"`    |
 
-6. Run `npm run build` — the game appears automatically
+5. Run `npm run build` — the game appears automatically
+
+> **Note:** `seo.json` is still supported for backward compatibility, but `game.json` is preferred.
 
 ## Icons & Screenshots
 

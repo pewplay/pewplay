@@ -193,85 +193,62 @@ const THEME_TOGGLE_SCRIPT = `
 `;
 
 // ============================================================
-//  RICERCA IMMAGINI NEL REPO DEL GIOCO
-//  Cerca in ordine di priorità: OG dedicata > preview > screenshot > thumb
-// ============================================================
-const OG_IMAGE_CANDIDATES = [
-  'og.png', 'og.jpg', 'og.webp',
-  'preview.png', 'preview.jpg', 'preview.webp',
-  'screenshot.png', 'screenshot.jpg', 'screenshot.webp',
-  'thumb.png', 'thumb.jpg', 'thumb.webp',
-  'cover.png', 'cover.jpg', 'cover.webp',
-  'banner.png', 'banner.jpg', 'banner.webp',
-];
-
-function findGameImage(gameDir, slug) {
-  for (const file of OG_IMAGE_CANDIDATES) {
-    if (fs.existsSync(path.join(gameDir, file))) {
-      return `/${slug}/${file}`;
-    }
-  }
-  // Fallback: placeholder
-  return `https://placehold.co/1200x630/6C5CE7/fff?text=${encodeURIComponent(prettifySlug(slug))}`;
-}
-
-// Cerca anche screenshot multipli per JSON-LD
-function findScreenshots(gameDir, slug) {
-  const shots = [];
-  // Cerca screenshot-1.png, screenshot-2.png, ecc.
-  for (let i = 1; i <= 5; i++) {
-    for (const ext of ['png','jpg','webp']) {
-      const f = `screenshot-${i}.${ext}`;
-      if (fs.existsSync(path.join(gameDir, f))) {
-        shots.push(`/${slug}/${f}`);
-      }
-    }
-  }
-  return shots;
-}
-
-// ============================================================
-//  LETTURA seo.json ARRICCHITO
-//  Formato supportato:
+//  LETTURA game.json
+//  File unico per ogni gioco con tutti i dati.
+//  Convenzione immagine: preview.png nella root del repo.
+//
 //  {
 //    "title": "Space Invaders",
 //    "description": "Classic arcade shooter...",
-//    "keywords": ["arcade", "shooter", "retro"],
+//    "keywords": ["arcade", "shooter"],
 //    "category": "Arcade",
 //    "author": "Studio Name",
-//    "image": "og.png",         ← path relativo nel repo
-//    "playMode": "MultiPlayer"  ← default: SinglePlayer
+//    "playMode": "SinglePlayer"
 //  }
+//
+//  Tutti i campi sono opzionali — il builder genera i default.
 // ============================================================
-function readGameSeo(gameDir, slug, repoDescription) {
+function readGameConfig(gameDir, slug, repoDescription) {
   const defaults = {
     title: prettifySlug(slug),
     description: repoDescription || `Play ${prettifySlug(slug)} for free online — no download needed.`,
     keywords: [],
     category: 'Game',
     author: '',
-    image: null,
     playMode: 'SinglePlayer',
   };
 
-  const seoFile = path.join(gameDir, 'seo.json');
-  if (!fs.existsSync(seoFile)) return defaults;
+  // Cerca game.json, fallback su seo.json per retrocompatibilità
+  let configFile = path.join(gameDir, 'game.json');
+  if (!fs.existsSync(configFile)) {
+    configFile = path.join(gameDir, 'seo.json');
+  }
+  if (!fs.existsSync(configFile)) return defaults;
 
   try {
-    const custom = JSON.parse(fs.readFileSync(seoFile, 'utf8'));
+    const c = JSON.parse(fs.readFileSync(configFile, 'utf8'));
     return {
-      title:       custom.title       || defaults.title,
-      description: custom.description || defaults.description,
-      keywords:    Array.isArray(custom.keywords) ? custom.keywords : defaults.keywords,
-      category:    custom.category    || defaults.category,
-      author:      custom.author      || defaults.author,
-      image:       custom.image       || null,     // path relativo tipo "og.png"
-      playMode:    custom.playMode    || defaults.playMode,
+      title:       c.title       || defaults.title,
+      description: c.description || defaults.description,
+      keywords:    Array.isArray(c.keywords) ? c.keywords : defaults.keywords,
+      category:    c.category    || defaults.category,
+      author:      c.author      || defaults.author,
+      playMode:    c.playMode    || defaults.playMode,
     };
   } catch {
-    console.warn(`   ⚠️ seo.json non valido in ${slug}`);
+    console.warn(`   ⚠️ config non valido in ${slug}`);
     return defaults;
   }
+}
+
+// Immagine: solo preview.png — semplice e chiaro
+function getGameImage(gameDir, slug) {
+  for (const ext of ['png', 'jpg', 'webp']) {
+    if (fs.existsSync(path.join(gameDir, `preview.${ext}`))) {
+      return `/${slug}/preview.${ext}`;
+    }
+  }
+  return `https://placehold.co/512x512/7C5CFC/fff?text=${encodeURIComponent(prettifySlug(slug))}`;
 }
 
 // ============================================================
@@ -329,9 +306,8 @@ function gameJsonLd(g) {
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD", availability: "https://schema.org/InStock" },
     isAccessibleForFree: true,
   };
-  if (g.author)      ld.author = { "@type": "Organization", name: g.author };
+  if (g.author)          ld.author = { "@type": "Organization", name: g.author };
   if (g.keywords?.length) ld.keywords = g.keywords.join(', ');
-  if (g.screenshots?.length) ld.screenshot = g.screenshots.map(s => absUrl(s));
   return `<script type="application/ld+json">${JSON.stringify(ld)}</script>`;
 }
 
@@ -391,43 +367,49 @@ async function main() {
 
   const gamesData = [];
 
-  // 3. Processa ogni gioco
-  for (const repo of gameRepos) {
-    console.log(`📦 ${repo.name}`);
+  // 3. Clona tutti i repo in parallelo
+  console.log(`⬇️  Clonazione parallela di ${gameRepos.length} repo...\n`);
+  await Promise.all(gameRepos.map(repo => {
     const gameDir = path.join(OUTPUT_DIR, repo.name);
     const authUrl = `https://${GH_TOKEN}@github.com/${ORG_NAME}/${repo.name}.git`;
+    return new Promise(resolve => {
+      try {
+        execSync(`git clone --depth 1 --quiet ${authUrl} ${gameDir}`);
+        fs.rmSync(path.join(gameDir, '.git'), { recursive: true, force: true });
+        resolve(true);
+      } catch (e) {
+        console.error(`   ❌ clone fallito: ${repo.name} — ${e.message}`);
+        resolve(false);
+      }
+    });
+  }));
+
+  // 4. Processa ogni gioco (già clonato)
+  for (const repo of gameRepos) {
+    const gameDir = path.join(OUTPUT_DIR, repo.name);
+    if (!fs.existsSync(gameDir)) continue;
+
+    console.log(`📦 ${repo.name}`);
 
     try {
-      execSync(`git clone --depth 1 --quiet ${authUrl} ${gameDir}`);
-      fs.rmSync(path.join(gameDir, '.git'), { recursive: true, force: true });
+      // Leggi game.json (o seo.json per retrocompatibilità)
+      const cfg = readGameConfig(gameDir, repo.name, repo.description);
 
-      // Leggi SEO dal repo (seo.json + fallback)
-      const seo = readGameSeo(gameDir, repo.name, repo.description);
-
-      // Immagine OG: priorità a seo.json > ricerca automatica
-      let imgPath;
-      if (seo.image && fs.existsSync(path.join(gameDir, seo.image))) {
-        imgPath = `/${repo.name}/${seo.image}`;
-      } else {
-        imgPath = findGameImage(gameDir, repo.name);
-      }
-
-      // Screenshot aggiuntivi per JSON-LD
-      const screenshots = findScreenshots(gameDir, repo.name);
+      // Immagine: preview.png — semplice
+      const imgPath = getGameImage(gameDir, repo.name);
 
       const gameUrl = `/${repo.name}/`;
       const canonical = SITE_URL + gameUrl;
-      const pageTitle = `${seo.title} — Play Free | ${SITE_NAME}`;
+      const pageTitle = `${cfg.title} — Play Free | ${SITE_NAME}`;
       const game = {
-        name: seo.title,
-        description: seo.description,
-        keywords: seo.keywords,
-        category: seo.category,
-        author: seo.author,
-        playMode: seo.playMode,
+        name: cfg.title,
+        description: cfg.description,
+        keywords: cfg.keywords,
+        category: cfg.category,
+        author: cfg.author,
+        playMode: cfg.playMode,
         url: gameUrl,
         img: imgPath,
-        screenshots,
         slug: repo.name,
       };
 
@@ -439,11 +421,11 @@ async function main() {
         const html = gameTemplate
           .replace(/{{LANG}}/g,      SITE_LANG)
           .replace(/{{HEAD_TAGS}}/g,  headTags(pageTitle, canonical))
-          .replace(/{{SEO_TAGS}}/g,   seoTags(seo.title, seo.description, imgPath, canonical, 'game', seo.keywords))
+          .replace(/{{SEO_TAGS}}/g,   seoTags(cfg.title, cfg.description, imgPath, canonical, 'game', cfg.keywords))
           .replace(/{{JSON_LD}}/g,    gameJsonLd(game))
           .replace(/{{STYLES}}/g,     COMMON_STYLES)
           .replace(/{{SITE_NAME}}/g,  esc(SITE_NAME))
-          .replace(/{{TITLE}}/g,      esc(seo.title))
+          .replace(/{{TITLE}}/g,      esc(cfg.title))
           .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
           .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
 
