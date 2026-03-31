@@ -84,16 +84,22 @@ All fields are optional — missing ones get smart defaults from the repo name a
 
 6. Run `npm run build` — the game appears automatically
 
-## Icons
+## Icons & Screenshots
 
-Place icon files in the project root. Only `favicon.png` is required — it's used as fallback for all sizes.
+Place icon files in the project root. Only `favicon.png` is required — it's used as fallback for all icon sizes.
 
-| File           | Size    | Used for                    |
-|----------------|---------|-----------------------------|
-| `favicon.png`  | any     | Fallback for all icons      |
-| `icon-32.png`  | 32×32   | Browser favicon             |
-| `icon-192.png` | 192×192 | PWA icon, Apple touch icon  |
-| `icon-512.png` | 512×512 | PWA splash, OG image        |
+| File                     | Size      | Used for                         |
+|--------------------------|-----------|----------------------------------|
+| `favicon.png`            | any       | Fallback for all icons           |
+| `icon-32.png`            | 32×32     | Browser favicon                  |
+| `icon-192.png`           | 192×192   | PWA icon, Apple touch icon       |
+| `icon-512.png`           | 512×512   | PWA splash, OG image             |
+| `icon-maskable-192.png`  | 192×192   | PWA adaptive icon (with padding) |
+| `icon-maskable-512.png`  | 512×512   | PWA adaptive icon (with padding) |
+| `screenshot-wide.png`    | 1280×720  | PWA install prompt (desktop)     |
+| `screenshot-narrow.png`  | 390×844   | PWA install prompt (mobile)      |
+
+**Maskable icons** have extra padding so the OS can crop them into circles, squircles, etc. Use [maskable.app](https://maskable.app/editor) to create them from your logo. Screenshots are optional but improve the install prompt on Chrome/Android.
 
 ## Output Structure
 
