@@ -1,134 +1,126 @@
 # PewPlay
 
-Static site generator that builds a free online games arcade from GitHub repos.
+Static site generator that turns GitHub repos into a free online games arcade. Zero frameworks, zero databases — just a single Node script that outputs a complete static site.
 
-It scans an organization for repositories tagged `web-game`, clones each one, wraps it in a styled page with SEO metadata, and outputs a full static site ready for deployment.
+## How it works
 
-## Features
-
-- **Zero-config game pages** — each repo becomes a playable page with header, fullscreen button, and iframe wrapper
-- **Homepage with instant search** — responsive grid with client-side filtering
-- **SEO out of the box** — Open Graph, Twitter Cards, JSON-LD structured data (`VideoGame` schema), canonical URLs, sitemap
-- **PWA ready** — manifest, service worker (stale-while-revalidate), touch icons
-- **Dark theme** — modern UI with Inter font, hover effects, gradient header
-- **Domain-independent** — change site name, URL, language, and tagline via environment variables
-- **Custom SEO per game** — optional `seo.json` in each game repo
+1. Scans a GitHub organization for repos tagged `web-game`
+2. Clones them all in parallel
+3. Wraps each game in a page with header, SEO, splash screen, and iframe
+4. Generates a homepage with game grid, instant search, and light/dark mode
+5. Outputs everything to `dist/` — ready to deploy on Cloudflare Pages, Netlify, or any static host
 
 ## Quick Start
 
 ```bash
-# 1. Clone
 git clone https://github.com/your-org/pewplay.git
 cd pewplay
-
-# 2. Configure
-cp .env.example .env
-# Edit .env with your GitHub org name and token
-
-# 3. Build
+cp .env.example .env       # edit with your org name and GitHub token
 export $(cat .env | xargs)
 npm run build
-
-# 4. Preview
-npx serve dist
+npx serve dist             # preview locally
 ```
 
-The site is generated in `dist/`.
+## Environment Variables
 
-## Configuration
+Only `ORG_NAME` and `GH_TOKEN` are required. Everything else has sensible defaults.
 
-All settings are controlled via environment variables (or edit the top of `build.js`).
-
-| Variable        | Required | Default                        | Description                  |
-|-----------------|----------|--------------------------------|------------------------------|
-| `ORG_NAME`      | ✅       | —                              | GitHub organization name     |
-| `GH_TOKEN`      | ✅       | —                              | GitHub personal access token |
-| `SITE_URL`      | —        | `https://www.pewplay.com`      | Base URL for sitemap & SEO   |
-| `SITE_NAME`     | —        | `PewPlay`                      | Brand name shown in header   |
-| `SITE_TAGLINE`  | —        | `Free Online Games`            | Subtitle on homepage         |
-| `SITE_DESC`     | —        | `Play the best free online…`   | Meta description for homepage|
-| `SITE_LANG`     | —        | `en`                           | HTML `lang` attribute        |
+| Variable       | Required | Default                      | Description                  |
+|----------------|----------|------------------------------|------------------------------|
+| `ORG_NAME`     | yes      | —                            | GitHub organization name     |
+| `GH_TOKEN`     | yes      | —                            | GitHub personal access token |
+| `SITE_URL`     | no       | `https://www.pewplay.com`    | Base URL for sitemap and SEO |
+| `SITE_NAME`    | no       | `PewPlay`                    | Brand name in header/footer  |
+| `SITE_TAGLINE` | no       | `Free Online Games`          | Subtitle on homepage         |
+| `SITE_DESC`    | no       | `Play the best free online…` | Homepage meta description    |
+| `SITE_LANG`    | no       | `en`                         | HTML `lang` attribute        |
 
 ## Adding a Game
 
-1. Create a repo in your organization with an `index.html` at the root
-2. Add the topic **`web-game`** to the repo
-3. Add a **`preview.png`** (512×512 recommended) for the card thumbnail
-4. *(Optional)* Add an **`og.png`** (1200×630) for social share previews with correct ratio
-5. Add a **`game.json`** with your game's metadata:
+Each game is a separate GitHub repo in your organization. The minimum you need is an `index.html` and the topic `web-game` on the repo. For proper SEO add `game.json` and `preview.png`.
 
+See **[GUIDA.md](GUIDA.md)** for the full step-by-step guide on how to set up a game repo.
+
+### Quick version
+
+```
+your-game-repo/
+├── index.html       ← your game (loaded in iframe)
+├── game.json        ← metadata: title, description, keywords
+├── preview.png      ← card image 512×512
+├── og.png           ← social share image 1200×630 (optional)
+└── …                ← your game files (css, js, assets)
+```
+
+`game.json`:
 ```json
 {
-  "title": "Space Invaders",
-  "description": "Classic arcade shooter — defend Earth from alien waves.",
-  "keywords": ["arcade", "shooter", "retro", "space"],
+  "title": "My Game",
+  "description": "A fun free browser game.",
+  "keywords": ["arcade", "puzzle"],
   "category": "Arcade",
-  "author": "Studio Name",
+  "author": "Your Name",
   "playMode": "SinglePlayer"
 }
 ```
 
-All fields are optional — missing ones get smart defaults from the repo name and description.
+All fields are optional. Missing images get auto-generated as placeholder PNGs during the build.
 
-| Field         | Default                          | Notes                                  |
-|---------------|----------------------------------|----------------------------------------|
-| `title`       | Repo name, prettified            | Used in `<title>`, OG, JSON-LD         |
-| `description` | Repo description or auto-gen     | Meta description, OG, JSON-LD          |
-| `keywords`    | `[]`                             | `<meta name="keywords">` + JSON-LD     |
-| `category`    | `"Game"`                         | JSON-LD `applicationCategory`          |
-| `author`      | —                                | JSON-LD `author`                       |
-| `playMode`    | `"SinglePlayer"`                 | `"SinglePlayer"` or `"MultiPlayer"`    |
+## What Gets Generated
 
-5. Run `npm run build` — the game appears automatically
+For every game the builder creates a wrapper page with header (back button, game title, theme toggle, fullscreen), a loading splash screen with the preview image, full SEO tags (Open Graph, Twitter Cards, JSON-LD `VideoGame` schema), and a canonical URL entry in the sitemap.
 
-> **Note:** `seo.json` is still supported for backward compatibility, but `game.json` is preferred.
+The homepage gets a responsive game grid with instant search, staggered card animations, and light/dark mode that follows the system preference.
 
-## Icons & Screenshots
-
-Place icon files in the project root. Only `favicon.png` is required — it's used as fallback for all icon sizes.
-
-| File                     | Size      | Used for                         |
-|--------------------------|-----------|----------------------------------|
-| `favicon.png`            | any       | Fallback for all icons           |
-| `icon-32.png`            | 32×32     | Browser favicon                  |
-| `icon-192.png`           | 192×192   | PWA icon, Apple touch icon       |
-| `icon-512.png`           | 512×512   | PWA splash                       |
-| `og-image.png`           | 1200×630  | Open Graph / social share image  |
-| `icon-maskable-192.png`  | 192×192   | PWA adaptive icon (with padding) |
-| `icon-maskable-512.png`  | 512×512   | PWA adaptive icon (with padding) |
-| `screenshot-wide.png`    | 1280×720  | PWA install prompt (desktop)     |
-| `screenshot-narrow.png`  | 390×844   | PWA install prompt (mobile)      |
-
-**Maskable icons** have extra padding so the OS can crop them into circles, squircles, etc. Use [maskable.app](https://maskable.app/editor) to create them from your logo. Screenshots are optional but improve the install prompt on Chrome/Android.
-
-## Output Structure
+### Output structure
 
 ```
 dist/
-├── index.html            # Homepage (game grid + search)
-├── 404.html              # Error page
-├── manifest.json         # PWA manifest
-├── robots.txt            # Crawling rules
-├── sitemap.xml           # Auto-generated sitemap
-├── service-worker.js     # Offline support
-├── icon-32.png
-├── icon-192.png
-├── icon-512.png
-├── favicon.png
-└── <game-slug>/          # One folder per game
-    ├── index.html        # Wrapper (header + iframe)
-    ├── internal.html     # Original game
-    └── …                 # Game assets
+├── index.html          # homepage with game grid
+├── 404.html            # error page
+├── manifest.json       # PWA manifest
+├── robots.txt          # sitemap reference
+├── sitemap.xml         # with image support
+├── service-worker.js   # offline support (stale-while-revalidate)
+├── og-image.png        # homepage social image
+├── icon-*.png          # favicons and PWA icons
+└── <game-slug>/
+    ├── index.html      # wrapper with header + iframe
+    ├── internal.html   # original game
+    ├── preview.png     # card image (or downloaded placeholder)
+    ├── og.png          # social image (or downloaded placeholder)
+    └── …               # game assets
 ```
+
+## Icons
+
+Place in the project root. Only `favicon.png` is required — it's used as fallback for all sizes.
+
+| File                    | Size     | Purpose                     |
+|-------------------------|----------|-----------------------------|
+| `favicon.png`           | any      | Fallback for all icons      |
+| `icon-32.png`           | 32×32    | Browser tab favicon         |
+| `icon-192.png`          | 192×192  | PWA icon, Apple touch icon  |
+| `icon-512.png`          | 512×512  | PWA splash screen           |
+| `og-image.png`          | 1200×630 | Homepage social share image |
+| `icon-maskable-192.png` | 192×192  | PWA adaptive icon           |
+| `icon-maskable-512.png` | 512×512  | PWA adaptive icon           |
+| `screenshot-wide.png`   | 1280×720 | PWA install prompt (desktop)|
+| `screenshot-narrow.png` | 390×844  | PWA install prompt (mobile) |
+
+Create maskable icons at [maskable.app/editor](https://maskable.app/editor).
 
 ## Deployment
 
-The `dist/` folder is a plain static site. Deploy it anywhere:
+The `dist/` folder is a plain static site.
 
-- **GitHub Pages** — push `dist/` to a `gh-pages` branch or use a GitHub Action
-- **Cloudflare Pages** — connect the repo and set build command to `npm run build`, output dir to `dist`
-- **Netlify** — same approach, or drag-and-drop the `dist/` folder
-- **Any static host** — just upload the contents of `dist/`
+**Cloudflare Pages**: connect the repo, set build command to `npm run build`, output directory to `dist`, and add `ORG_NAME` + `GH_TOKEN` as environment variables.
+
+**Netlify / GitHub Pages / any static host**: same concept — run the build, serve `dist/`.
+
+## Tech Stack
+
+No dependencies. Just Node.js ≥ 18 (for native `fetch`). The builder is a single `build.js` file (~700 lines) that produces pure HTML/CSS/JS output. The UI uses the Outfit font, CSS custom properties for theming, and zero JavaScript frameworks.
 
 ## License
 

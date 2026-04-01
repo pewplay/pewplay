@@ -1,12 +1,12 @@
 # Guida: Come creare un gioco per PewPlay
 
-Questa guida spiega come impostare un repository GitHub per pubblicare un gioco su PewPlay.
+Questa guida spiega passo per passo come impostare un repository GitHub perché venga automaticamente incluso nel sito PewPlay.
 
 ---
 
-## Panoramica
+## Come funziona
 
-PewPlay funziona così: un builder scansiona tutti i repository della tua organizzazione GitHub che hanno il topic `web-game`, li clona, e genera automaticamente una pagina wrapper con header, SEO, e splash screen per ogni gioco. Il tuo gioco viene caricato dentro un iframe.
+Il builder di PewPlay scansiona tutti i repository della tua organizzazione GitHub che hanno il topic `web-game`, li clona tutti in parallelo, e per ognuno genera una pagina wrapper con header, splash screen, SEO completa e iframe. Il tuo gioco viene caricato dentro l'iframe.
 
 Tu devi solo creare un repo con i file giusti — il resto è automatico.
 
@@ -16,39 +16,42 @@ Tu devi solo creare un repo con i file giusti — il resto è automatico.
 
 ```
 nome-del-gioco/
-├── index.html        ← Obbligatorio: il punto di ingresso del gioco
-├── game.json         ← Obbligatorio: metadata del gioco (titolo, descrizione, SEO)
-├── preview.png       ← Consigliato: immagine card per la griglia homepage (512×512)
-├── og.png            ← Opzionale: immagine per social/link preview (1200×630)
+├── index.html        ← Obbligatorio: punto di ingresso del gioco
+├── game.json         ← Consigliato: titolo, descrizione, SEO
+├── preview.png       ← Consigliato: immagine card 512×512
+├── og.png            ← Opzionale: immagine social 1200×630
 ├── style.css         ← I tuoi stili
 ├── game.js           ← La logica del gioco
-└── assets/           ← Qualsiasi altra risorsa (immagini, audio, font...)
+└── assets/           ← Qualsiasi risorsa (immagini, audio, font)
 ```
+
+Se mancano `preview.png` o `og.png`, il builder scarica automaticamente dei placeholder PNG durante la build. Se manca `game.json`, il titolo viene generato dal nome del repo.
 
 ---
 
 ## Passo 1 — Crea il repository
 
-Crea un nuovo repository nella tua organizzazione GitHub. Il nome del repo diventa lo slug URL del gioco.
+Crea un nuovo repo nella tua organizzazione GitHub. Il nome del repo diventa lo slug URL del gioco.
 
-Esempio: il repo `space-invaders` verrà servito su `pewplay.com/space-invaders/`
+**Esempio:** il repo `space-invaders` → `pewplay.com/space-invaders/`
 
-Puoi usare il template `pewplay-game-template` se disponibile (clicca "Use this template" su GitHub).
+Se disponibile, puoi partire dal template `pewplay-game-template` cliccando "Use this template" su GitHub.
 
 ---
 
 ## Passo 2 — Aggiungi il topic `web-game`
 
-Questo è il passaggio più importante. Senza il topic, il builder non troverà il tuo repo.
+Senza questo topic il builder non trova il repo. È il passaggio più importante.
 
-1. Vai su GitHub → il tuo repo → **Settings** (o dalla pagina principale clicca la rotella ⚙️ accanto a "About")
-2. Nel campo **Topics** scrivi `web-game` e conferma
+1. Vai su GitHub → il tuo repo
+2. Clicca la ⚙️ accanto a "About" (o vai in Settings)
+3. Nel campo **Topics** scrivi `web-game` e conferma
 
 ---
 
 ## Passo 3 — Crea `index.html`
 
-Questo è il file che PewPlay carica dentro l'iframe. Deve funzionare come pagina standalone.
+Questo file viene caricato dentro un iframe nel sito PewPlay. Deve funzionare come pagina standalone.
 
 ```html
 <!DOCTYPE html>
@@ -66,69 +69,66 @@ Questo è il file che PewPlay carica dentro l'iframe. Deve funzionare come pagin
 </html>
 ```
 
-Il tuo `index.html` viene rinominato automaticamente in `internal.html` durante il build. Al suo posto viene creato un wrapper con header PewPlay + iframe che punta a `internal.html`. Non devi preoccupartene — basta che il tuo `index.html` funzioni da solo.
+Durante la build, il tuo `index.html` viene rinominato in `internal.html`. Al suo posto viene creato un wrapper con l'header PewPlay e l'iframe che punta a `internal.html`. Non devi preoccupartene — basta che il tuo `index.html` funzioni da solo.
 
 ---
 
 ## Passo 4 — Crea `game.json`
 
-Questo file contiene tutti i metadata del gioco. Il builder lo usa per generare titolo pagina, meta description, Open Graph, Twitter Card e JSON-LD (structured data per Google).
+Contiene i metadata del gioco. Il builder li usa per generare il titolo della pagina, la meta description, Open Graph, Twitter Card e JSON-LD (structured data per Google).
 
 ```json
 {
   "title": "Space Invaders",
-  "description": "Difendi la Terra dalle ondate aliene in questo classico sparatutto arcade. Gioca gratis nel browser.",
-  "keywords": ["arcade", "shooter", "retro", "space", "aliens"],
+  "description": "Difendi la Terra dalle ondate aliene. Gioca gratis nel browser, senza download.",
+  "keywords": ["arcade", "shooter", "retro", "space"],
   "category": "Arcade",
-  "author": "Il Tuo Nome o Studio",
+  "author": "Il Tuo Nome",
   "playMode": "SinglePlayer"
 }
 ```
 
 ### Dettaglio campi
 
-| Campo         | Obbligatorio | Default                              | Dove viene usato                          |
-|---------------|--------------|--------------------------------------|-------------------------------------------|
-| `title`       | No           | Nome repo prettificato               | `<title>`, `og:title`, card homepage      |
-|               |              | (es. `space-invaders` → "Space Invaders") |                                      |
-| `description` | No           | "Play [titolo] for free online…"     | `<meta description>`, `og:description`    |
-| `keywords`    | No           | `[]`                                 | `<meta keywords>`, JSON-LD                |
-| `category`    | No           | `"Game"`                             | JSON-LD `applicationCategory`             |
-| `author`      | No           | —                                    | JSON-LD `author`                          |
-| `playMode`    | No           | `"SinglePlayer"`                     | JSON-LD (valori: `SinglePlayer`, `MultiPlayer`) |
+| Campo         | Obbligatorio | Default                                 | Dove appare                            |
+|---------------|:------------:|-----------------------------------------|----------------------------------------|
+| `title`       | no           | Nome repo formattato (es. "Space Invaders") | `<title>`, OG, card homepage       |
+| `description` | no           | "Play [titolo] for free online…"        | Meta description, OG, Twitter Card     |
+| `keywords`    | no           | `[]`                                    | `<meta keywords>`, JSON-LD             |
+| `category`    | no           | `"Game"`                                | JSON-LD `applicationCategory`          |
+| `author`      | no           | —                                       | JSON-LD `author`                       |
+| `playMode`    | no           | `"SinglePlayer"`                        | JSON-LD (`SinglePlayer` o `MultiPlayer`) |
 
-Tutti i campi sono opzionali. Se `game.json` non esiste, il builder genera tutto dai dati del repository GitHub (nome repo + description del repo).
+Se `game.json` non esiste, il builder genera tutto dal nome e dalla description del repository su GitHub.
 
-Il file `seo.json` è ancora supportato per retrocompatibilità, ma `game.json` è il nome preferito.
+> Il vecchio nome `seo.json` è ancora supportato per retrocompatibilità, ma `game.json` è il nome preferito.
 
 ### Consigli SEO
 
-- **`title`**: tienilo tra 20 e 50 caratteri. Viene mostrato come "Space Invaders — Play Free | PewPlay" nel browser
-- **`description`**: tra 100 e 160 caratteri. Sii specifico, descrivi il gameplay
-- **`keywords`**: 3-8 parole chiave pertinenti. Non esagerare
+Il titolo nel browser apparirà come **"Space Invaders — Play Free | PewPlay"**, quindi tienilo tra 20 e 50 caratteri. La description dovrebbe essere tra 100 e 160 caratteri e descrivere il gameplay. Le keywords dovrebbero essere 3-8 parole pertinenti.
 
 ---
 
 ## Passo 5 — Aggiungi le immagini
 
-### `preview.png` — Immagine card (consigliato)
+### `preview.png` — Immagine card
 
-Questa è l'immagine che appare nella griglia della homepage di PewPlay.
+Appare nella griglia della homepage.
 
-- **Dimensioni**: 512×512 px (quadrata)
-- **Formato**: PNG, JPG, o WebP
-- **Contenuto**: mostra il gameplay reale, non solo il logo
-- Il builder cerca `preview.png`, `preview.jpg`, o `preview.webp`
-- Se manca, viene usato un placeholder colorato con il nome del gioco
+- **Dimensioni:** 512×512 px (quadrata)
+- **Formato:** PNG, JPG o WebP
+- **Contenuto:** mostra il gameplay, non solo il logo
+- Se manca → il builder scarica un placeholder PNG con il nome del gioco su sfondo viola
 
-### `og.png` — Immagine social (opzionale)
+### `og.png` — Immagine social
 
-Questa immagine viene usata quando qualcuno condivide il link del gioco su social, WhatsApp, Discord, ecc.
+Appare quando qualcuno condivide il link su WhatsApp, Discord, Twitter, Facebook, ecc.
 
-- **Dimensioni**: 1200×630 px (ratio 1.91:1)
-- **Formato**: PNG, JPG, o WebP
-- Il builder cerca `og.png`, `og.jpg`, o `og.webp`
-- Se manca, viene usata `preview.png` come fallback (funziona, ma il ratio non è ottimale per i social)
+- **Dimensioni:** 1200×630 px (ratio 1.91:1)
+- **Formato:** PNG, JPG o WebP
+- Se manca → il builder scarica un placeholder PNG con il titolo su sfondo scuro
+
+I placeholder vengono scaricati da placehold.co **durante la build** e salvati come file PNG locali nella cartella `dist/` del gioco. A runtime il sito non fa richieste esterne.
 
 ---
 
@@ -136,21 +136,16 @@ Questa immagine viene usata quando qualcuno condivide il link del gioco su socia
 
 ### Test locale
 
-Apri `index.html` direttamente nel browser. Per la maggior parte dei giochi è sufficiente.
-
-Se hai bisogno di un server locale (per ES modules, fetch, Web Audio, ecc.):
+Apri `index.html` nel browser. Per la maggior parte dei giochi basta. Se ti serve un server locale:
 
 ```bash
-# Con Python
-python3 -m http.server 8000
-
-# Con Node
-npx serve .
+python3 -m http.server 8000    # Python
+npx serve .                    # Node
 ```
 
 ### Test in iframe
 
-PewPlay carica il gioco dentro un iframe. Puoi simularlo:
+PewPlay carica il gioco in un iframe con un header di 52px. Simula così:
 
 ```html
 <!DOCTYPE html>
@@ -162,61 +157,49 @@ PewPlay carica il gioco dentro un iframe. Puoi simularlo:
 </html>
 ```
 
-Salva questo come `test-wrapper.html` nella stessa cartella e aprilo nel browser.
-
-### Checklist pre-pubblicazione
+### Checklist
 
 - [ ] Il gioco funziona aprendo `index.html` direttamente
-- [ ] Il gioco funziona dentro un iframe
-- [ ] Funziona su mobile (touch input)
-- [ ] `game.json` ha titolo e descrizione compilati
+- [ ] Funziona anche dentro un iframe
+- [ ] Funziona su mobile (touch)
+- [ ] `game.json` ha titolo e descrizione
 - [ ] `preview.png` è presente (512×512)
 - [ ] Il topic `web-game` è impostato sul repo
 
 ---
 
-## Cosa puoi usare
+## Cosa puoi e non puoi usare
 
-Siccome i giochi girano su Cloudflare Pages come file statici dentro un iframe:
+I giochi girano su Cloudflare Pages come file statici dentro un iframe.
 
-| ✅ Puoi usare | ❌ Non puoi usare |
-|---|---|
-| HTML, CSS, JS — qualsiasi file statico | Server-side code (Node, PHP, Python) |
-| Canvas 2D e WebGL | Build step richiesto (devi committare l'output) |
-| Web Audio API | Backend / database |
-| Gamepad API | |
-| ES Modules (`<script type="module">`) | |
-| Immagini, audio, font, video | |
-| Librerie da CDN (cdnjs, unpkg, esm.sh) | |
-| localStorage (scoped al dominio PewPlay) | |
-| WebSocket (verso server esterni) | |
+**Puoi usare:** HTML, CSS, JS, Canvas 2D, WebGL, Web Audio, Gamepad API, ES Modules, immagini, audio, font, video, librerie da CDN (cdnjs, unpkg, esm.sh), localStorage (scoped al dominio PewPlay), WebSocket verso server esterni.
+
+**Non puoi usare:** codice server-side (Node, PHP, Python), build step richiesti al deploy (devi committare i file finali), backend o database.
 
 ---
 
-## Cosa genera il builder automaticamente
+## Cosa genera il builder
 
-Per ogni gioco, il builder crea:
-
-- **Pagina wrapper** con header PewPlay (logo, titolo gioco, bottone indietro, dark mode, fullscreen)
-- **Splash screen** con la `preview.png` del gioco e spinner (visibile mentre l'iframe carica)
-- **SEO completa**: `<title>`, meta description, Open Graph, Twitter Card, canonical URL
-- **JSON-LD** strutturato (`VideoGame` schema) per Google Rich Results
-- **Entry nella sitemap** con immagine associata
-
-Tu non devi gestire nulla di tutto questo — basta il tuo gioco + `game.json` + `preview.png`.
+Per ogni gioco:
+- Pagina wrapper con header (back, titolo, dark mode, fullscreen)
+- Splash screen con `preview.png` e spinner durante il caricamento
+- `<title>`, meta description, Open Graph, Twitter Card, canonical URL
+- JSON-LD strutturato (schema `VideoGame`)
+- Entry nella sitemap con immagine associata
+- Placeholder PNG se mancano `preview.png` o `og.png`
 
 ---
 
 ## Esempio completo
 
-Repo: `flappy-cat`
+**Repo:** `flappy-cat`
 
 ```
 flappy-cat/
 ├── index.html
 ├── game.json
-├── preview.png       (512×512)
-├── og.png            (1200×630)
+├── preview.png       ← 512×512
+├── og.png            ← 1200×630
 ├── style.css
 ├── game.js
 └── assets/
@@ -225,45 +208,38 @@ flappy-cat/
     └── jump.mp3
 ```
 
-`game.json`:
+**game.json:**
 ```json
 {
   "title": "Flappy Cat",
-  "description": "Guida un gatto volante tra i tubi. Quanto lontano riesci ad arrivare? Gioca gratis online.",
-  "keywords": ["flappy", "casual", "gatto", "arcade", "endless"],
+  "description": "Guida un gatto volante tra i tubi. Quanto lontano arrivi? Gioca gratis online.",
+  "keywords": ["flappy", "casual", "gatto", "arcade"],
   "category": "Casual",
   "author": "PewPlay Studio",
   "playMode": "SinglePlayer"
 }
 ```
 
-Risultato su PewPlay:
-- **URL**: `pewplay.com/flappy-cat/`
-- **Titolo browser**: "Flappy Cat — Play Free | PewPlay"
-- **Card homepage**: immagine da `preview.png`, nome "Flappy Cat"
-- **Link condiviso su social**: immagine da `og.png` (1200×630), titolo "Flappy Cat"
+**Risultato su PewPlay:**
+- URL: `pewplay.com/flappy-cat/`
+- Titolo tab: "Flappy Cat — Play Free | PewPlay"
+- Card homepage: `preview.png` con nome "Flappy Cat"
+- Link condiviso: `og.png` a 1200×630
 
 ---
 
 ## FAQ
 
-**Il gioco non appare su PewPlay**
-→ Controlla che il topic `web-game` sia impostato sul repo. Poi rilancia il build.
+**Il gioco non appare su PewPlay** → Controlla che il topic `web-game` sia sul repo, poi rilancia la build.
 
-**Il titolo mostra il nome del repo con trattini**
-→ Crea un `game.json` con il campo `title` compilato.
+**Il titolo mostra il nome del repo con trattini** → Aggiungi un `game.json` con il campo `title`.
 
-**L'immagine di preview è un placeholder viola**
-→ Aggiungi un file `preview.png` (o .jpg/.webp) nella root del repo.
+**L'immagine card è un placeholder viola** → Aggiungi `preview.png` (512×512) nella root del repo.
 
-**L'immagine sui social è tagliata male**
-→ Aggiungi un `og.png` a 1200×630 px. Senza, viene usata `preview.png` (quadrata) che i social tagliano.
+**Le preview social sono tagliate male** → Aggiungi `og.png` a 1200×630 px.
 
-**Come aggiorno il gioco?**
-→ Pusha le modifiche su GitHub e rilancia il build di PewPlay. Il builder clona sempre l'ultima versione del repo.
+**Come aggiorno il gioco?** → Pusha su GitHub e rilancia la build di PewPlay. Clona sempre l'ultima versione.
 
-**Posso usare un framework JS (React, Phaser, Three.js)?**
-→ Sì, ma devi committare i file buildati (la cartella `dist` o l'output finale). Il builder non esegue `npm install` o `npm build` — prende i file così come sono.
+**Posso usare React, Phaser, Three.js?** → Sì, ma committa i file buildati. Il builder non esegue `npm install` né `npm build`.
 
-**Il mio gioco usa localStorage — funziona?**
-→ Sì, ma il `localStorage` è condiviso con il dominio `pewplay.com`. Usa chiavi specifiche per il tuo gioco (es. `flappy-cat-highscore`) per evitare conflitti.
+**localStorage funziona?** → Sì, ma è condiviso col dominio PewPlay. Usa chiavi specifiche (es. `flappy-cat-highscore`).

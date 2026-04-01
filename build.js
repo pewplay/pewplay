@@ -32,119 +32,51 @@ function prettifySlug(slug) {
 }
 
 // ============================================================
-//  CSS CONDIVISO — LIGHT/DARK MODE CON CSS VARIABLES
+//  CSS CONDIVISO — LIGHT/DARK MODE
 // ============================================================
+const DARK_VARS = `
+    --bg:#0e0e14;--bg-card:#1a1a26;--bg-header:#141420;--bg-input:#1e1e2e;
+    --border:#2a2a3c;--text:#e8e8f0;--text-2:#8888a0;--text-3:#555568;
+    --shadow-card:0 2px 12px rgba(0,0,0,.25);
+    --shadow-card-hover:0 12px 32px rgba(124,92,252,.2);
+    --header-shadow:0 1px 0 rgba(255,255,255,.06);
+    --overlay-name:linear-gradient(transparent 30%,rgba(0,0,0,.88));`;
+
 const COMMON_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 
-  /* ── TEMA ───────────────────────────────────── */
   :root {
-    --accent: #7C5CFC;
-    --accent-soft: rgba(124,92,252,.12);
-    --accent-glow: rgba(124,92,252,.35);
-    --radius: 14px;
-    --header-h: 52px;
-    --font: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-    /* Light (default) */
-    --bg:       #f4f3f8;
-    --bg-card:  #ffffff;
-    --bg-header: #ffffff;
-    --bg-input: #eeedf3;
-    --border:   #e0dfe6;
-    --text:     #1a1a2e;
-    --text-2:   #6b6b80;
-    --text-3:   #9d9db0;
-    --shadow-card: 0 2px 12px rgba(0,0,0,.06);
-    --shadow-card-hover: 0 12px 32px rgba(124,92,252,.15);
-    --header-shadow: 0 1px 0 var(--border);
-    --overlay-name: linear-gradient(transparent 40%, rgba(0,0,0,.75));
-    color-scheme: light dark;
+    --accent:#7C5CFC;
+    --accent-soft:rgba(124,92,252,.12);
+    --accent-glow:rgba(124,92,252,.35);
+    --radius:14px;
+    --header-h:52px;
+    --font:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --bg:#f4f3f8;--bg-card:#fff;--bg-header:#fff;--bg-input:#eeedf3;
+    --border:#e0dfe6;--text:#1a1a2e;--text-2:#6b6b80;--text-3:#9d9db0;
+    --shadow-card:0 2px 12px rgba(0,0,0,.06);
+    --shadow-card-hover:0 12px 32px rgba(124,92,252,.15);
+    --header-shadow:0 1px 0 var(--border);
+    --overlay-name:linear-gradient(transparent 40%,rgba(0,0,0,.75));
+    color-scheme:light dark;
   }
+  [data-theme="dark"]{${DARK_VARS}}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){${DARK_VARS}}}
 
-  /* Dark */
-  [data-theme="dark"] {
-    --bg:       #0e0e14;
-    --bg-card:  #1a1a26;
-    --bg-header: #141420;
-    --bg-input: #1e1e2e;
-    --border:   #2a2a3c;
-    --text:     #e8e8f0;
-    --text-2:   #8888a0;
-    --text-3:   #555568;
-    --shadow-card: 0 2px 12px rgba(0,0,0,.25);
-    --shadow-card-hover: 0 12px 32px rgba(124,92,252,.2);
-    --header-shadow: 0 1px 0 rgba(255,255,255,.06);
-    --overlay-name: linear-gradient(transparent 30%, rgba(0,0,0,.88));
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg:       #0e0e14;
-      --bg-card:  #1a1a26;
-      --bg-header: #141420;
-      --bg-input: #1e1e2e;
-      --border:   #2a2a3c;
-      --text:     #e8e8f0;
-      --text-2:   #8888a0;
-      --text-3:   #555568;
-      --shadow-card: 0 2px 12px rgba(0,0,0,.25);
-      --shadow-card-hover: 0 12px 32px rgba(124,92,252,.2);
-      --header-shadow: 0 1px 0 rgba(255,255,255,.06);
-      --overlay-name: linear-gradient(transparent 30%, rgba(0,0,0,.88));
-    }
-  }
-
-  /* ── RESET ──────────────────────────────────── */
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:var(--font);
-    background:var(--bg);
-    color:var(--text);
-    -webkit-font-smoothing:antialiased;
-    transition: background .3s, color .3s;
-  }
+  body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
 
-  /* ── HEADER ─────────────────────────────────── */
-  header{
-    background:var(--bg-header);
-    color:var(--text);
-    height:var(--header-h);
-    display:flex;align-items:center;
-    padding:0 16px;position:fixed;
-    top:0;left:0;right:0;z-index:1000;
-    box-shadow:var(--header-shadow);
-    gap:10px;
-    transition: background .3s, box-shadow .3s;
-  }
-  header .logo{
-    display:flex;align-items:center;gap:10px;
-    text-decoration:none;color:var(--text);
-    font-weight:800;font-size:19px;letter-spacing:-.3px;
-  }
+  header{background:var(--bg-header);color:var(--text);height:var(--header-h);display:flex;align-items:center;padding:0 16px;position:fixed;top:0;left:0;right:0;z-index:1000;box-shadow:var(--header-shadow);gap:10px;transition:background .3s,box-shadow .3s}
+  header .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:800;font-size:19px;letter-spacing:-.3px}
   header .logo img{width:30px;height:30px;border-radius:8px}
-  header .game-title{
-    font-weight:600;font-size:15px;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    min-width:0;
-  }
+  header .game-title{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   header .spacer{flex:1}
 
-  /* Bottone unificato per header (back, theme, fullscreen) */
-  .header-btn{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:36px;height:36px;border-radius:10px;flex-shrink:0;
-    background:var(--accent-soft);
-    color:var(--text-2);
-    border:none;cursor:pointer;
-    text-decoration:none;
-    transition:background .2s,color .2s,transform .15s;
-  }
+  .header-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;flex-shrink:0;background:var(--accent-soft);color:var(--text-2);border:none;cursor:pointer;text-decoration:none;transition:background .2s,color .2s,transform .15s}
   .header-btn:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
   .header-btn:active{transform:scale(.95)}
   .header-btn svg{width:18px;height:18px;flex-shrink:0}
 
-  /* ── THEME TOGGLE (extends .header-btn) ───── */
   .header-btn .icon-sun{display:none}
   .header-btn .icon-moon{display:block}
   [data-theme="dark"] .header-btn .icon-sun{display:block}
@@ -189,22 +121,7 @@ const THEME_TOGGLE_SCRIPT = `
 <\/script>
 `;
 
-// ============================================================
-//  LETTURA game.json
-//  File unico per ogni gioco con tutti i dati.
-//  Convenzione immagine: preview.png nella root del repo.
-//
-//  {
-//    "title": "Space Invaders",
-//    "description": "Classic arcade shooter...",
-//    "keywords": ["arcade", "shooter"],
-//    "category": "Arcade",
-//    "author": "Studio Name",
-//    "playMode": "SinglePlayer"
-//  }
-//
-//  Tutti i campi sono opzionali — il builder genera i default.
-// ============================================================
+// ── GAME CONFIG (game.json) ───────────────────────────────
 function readGameConfig(gameDir, slug, repoDescription) {
   const defaults = {
     title: prettifySlug(slug),
@@ -238,15 +155,12 @@ function readGameConfig(gameDir, slug, repoDescription) {
   }
 }
 
-// ============================================================
-//  PLACEHOLDER IMAGES — scaricati come PNG durante il build
-//  Usa placehold.co al momento del build, salva i file in locale.
-//  A runtime il sito serve solo file statici propri.
-// ============================================================
+// ── PLACEHOLDER IMAGES ────────────────────────────────────
+// Downloaded as PNG from placehold.co during build.
+// At runtime the site serves only local static files.
 const PH_BG     = '1a1a2e';
 const PH_ACCENT = '7C5CFC';
 
-// Scarica un placeholder PNG da placehold.co e lo salva su disco
 async function downloadPlaceholder(filePath, w, h, text, bg = PH_BG, fg = 'ffffff') {
   const url = `https://placehold.co/${w}x${h}/${bg}/${fg}/png?text=${encodeURIComponent(text)}&font=raleway`;
   try {
@@ -299,9 +213,7 @@ function getHomeOgImage(outputDir, pendingDownloads) {
   return { url: '/og-image.png', size: { w: 1200, h: 630 } };
 }
 
-// ============================================================
-//  GENERATORI HTML <head>
-// ============================================================
+// ── HTML HEAD GENERATORS ──────────────────────────────────
 function headTags(pageTitle, canonicalUrl) {
   return `
   <meta charset="UTF-8">
@@ -389,9 +301,7 @@ function absUrl(p) {
   return p.startsWith('http') ? p : SITE_URL + p;
 }
 
-// ============================================================
-//  MAIN BUILD
-// ============================================================
+// ── BUILD ─────────────────────────────────────────────────
 async function main() {
   console.log(`\n--- BUILD ${SITE_NAME} (${SITE_URL}) ---\n`);
 
