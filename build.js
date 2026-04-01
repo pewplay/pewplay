@@ -239,40 +239,73 @@ function readGameConfig(gameDir, slug, repoDescription) {
 }
 
 // ============================================================
-//  PLACEHOLDER IMAGES (placehold.co)
-//  Genera URL coerenti col branding per immagini mancanti.
-//  Card = 512×512, OG = 1200×630, Icon = quadrata
+//  PLACEHOLDER IMAGES — generati come SVG locali durante il build
+//  Nessuna dipendenza esterna, funzionano sempre offline.
 // ============================================================
-const PH_BG = '1a1a2e';   // sfondo scuro
-const PH_FG = 'ffffff';   // testo bianco
-const PH_ACCENT = '7C5CFC'; // accent viola
+const PH_BG     = '#1a1a2e';
+const PH_ACCENT = '#7C5CFC';
 
-function placeholder(w, h, text, bg = PH_BG, fg = PH_FG) {
-  return `https://placehold.co/${w}x${h}/${bg}/${fg}?text=${encodeURIComponent(text)}&font=raleway`;
+// Genera un SVG placeholder e lo salva su disco, ritorna il path relativo
+function generatePlaceholder(filePath, w, h, text, bg = PH_BG, fg = '#fff') {
+  // Dividi il testo in righe se troppo lungo
+  const maxChars = Math.floor(w / (h > 500 ? 18 : 28));
+  let lines = [];
+  if (text.length <= maxChars) {
+    lines = [text];
+  } else {
+    const words = text.split(' ');
+    let line = '';
+    for (const word of words) {
+      if ((line + ' ' + word).trim().length > maxChars) {
+        if (line) lines.push(line.trim());
+        line = word;
+      } else {
+        line = (line + ' ' + word).trim();
+      }
+    }
+    if (line) lines.push(line.trim());
+  }
+
+  const fontSize = Math.min(Math.floor(w / 12), Math.floor(h / 6), 48);
+  const lineHeight = fontSize * 1.3;
+  const startY = (h / 2) - ((lines.length - 1) * lineHeight / 2);
+
+  const textEls = lines.map((l, i) =>
+    `<text x="${w/2}" y="${startY + i * lineHeight}" text-anchor="middle" dominant-baseline="central" fill="${fg}" font-family="system-ui,-apple-system,sans-serif" font-weight="700" font-size="${fontSize}">${esc(l)}</text>`
+  ).join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+  <rect width="${w}" height="${h}" fill="${bg}" rx="0"/>
+  ${textEls}
+</svg>`;
+
+  fs.writeFileSync(filePath, svg);
 }
 
-// Card homepage: preview.png (quadrata) — l'unica che deve essere locale
+// Card homepage: preview.png (quadrata)
 function getGameImage(gameDir, slug) {
   for (const ext of ['png', 'jpg', 'webp']) {
     if (fs.existsSync(path.join(gameDir, `preview.${ext}`))) {
       return `/${slug}/preview.${ext}`;
     }
   }
-  return placeholder(512, 512, prettifySlug(slug), PH_ACCENT, PH_FG);
+  // Genera SVG placeholder nella cartella del gioco
+  const phFile = 'preview-placeholder.svg';
+  generatePlaceholder(path.join(gameDir, phFile), 512, 512, prettifySlug(slug), PH_ACCENT);
+  return `/${slug}/${phFile}`;
 }
 
-// OG image per social: og.png (1200×630) → placehold.co se manca
+// OG image per social: og.png (1200×630)
 function getGameOgImage(gameDir, slug, title) {
   for (const ext of ['png', 'jpg', 'webp']) {
     if (fs.existsSync(path.join(gameDir, `og.${ext}`))) {
       return { url: `/${slug}/og.${ext}`, size: { w: 1200, h: 630 } };
     }
   }
-  // Fallback: placehold.co con titolo gioco — ratio OG corretto
-  return {
-    url: placeholder(1200, 630, title, PH_BG, PH_FG),
-    size: { w: 1200, h: 630 }
-  };
+  // Genera SVG placeholder OG nella cartella del gioco
+  const phFile = 'og-placeholder.svg';
+  generatePlaceholder(path.join(gameDir, phFile), 1200, 630, title, PH_BG);
+  return { url: `/${slug}/${phFile}`, size: { w: 1200, h: 630 } };
 }
 
 // OG image homepage
@@ -280,10 +313,10 @@ function getHomeOgImage(outputDir) {
   if (fs.existsSync(path.join(outputDir, 'og-image.png'))) {
     return { url: '/og-image.png', size: { w: 1200, h: 630 } };
   }
-  return {
-    url: placeholder(1200, 630, `${SITE_NAME}+—+${SITE_TAGLINE}`, PH_BG, PH_FG),
-    size: { w: 1200, h: 630 }
-  };
+  // Genera SVG placeholder homepage
+  const phFile = 'og-placeholder.svg';
+  generatePlaceholder(path.join(outputDir, phFile), 1200, 630, `${SITE_NAME} — ${SITE_TAGLINE}`, PH_BG);
+  return { url: `/${phFile}`, size: { w: 1200, h: 630 } };
 }
 
 // ============================================================
