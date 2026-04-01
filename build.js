@@ -238,14 +238,52 @@ function readGameConfig(gameDir, slug, repoDescription) {
   }
 }
 
-// Immagine: solo preview.png — semplice e chiaro
+// ============================================================
+//  PLACEHOLDER IMAGES (placehold.co)
+//  Genera URL coerenti col branding per immagini mancanti.
+//  Card = 512×512, OG = 1200×630, Icon = quadrata
+// ============================================================
+const PH_BG = '1a1a2e';   // sfondo scuro
+const PH_FG = 'ffffff';   // testo bianco
+const PH_ACCENT = '7C5CFC'; // accent viola
+
+function placeholder(w, h, text, bg = PH_BG, fg = PH_FG) {
+  return `https://placehold.co/${w}x${h}/${bg}/${fg}?text=${encodeURIComponent(text)}&font=raleway`;
+}
+
+// Card homepage: preview.png (quadrata) — l'unica che deve essere locale
 function getGameImage(gameDir, slug) {
   for (const ext of ['png', 'jpg', 'webp']) {
     if (fs.existsSync(path.join(gameDir, `preview.${ext}`))) {
       return `/${slug}/preview.${ext}`;
     }
   }
-  return `https://placehold.co/512x512/7C5CFC/fff?text=${encodeURIComponent(prettifySlug(slug))}`;
+  return placeholder(512, 512, prettifySlug(slug), PH_ACCENT, PH_FG);
+}
+
+// OG image per social: og.png (1200×630) → placehold.co se manca
+function getGameOgImage(gameDir, slug, title) {
+  for (const ext of ['png', 'jpg', 'webp']) {
+    if (fs.existsSync(path.join(gameDir, `og.${ext}`))) {
+      return { url: `/${slug}/og.${ext}`, size: { w: 1200, h: 630 } };
+    }
+  }
+  // Fallback: placehold.co con titolo gioco — ratio OG corretto
+  return {
+    url: placeholder(1200, 630, title, PH_BG, PH_FG),
+    size: { w: 1200, h: 630 }
+  };
+}
+
+// OG image homepage
+function getHomeOgImage(outputDir) {
+  if (fs.existsSync(path.join(outputDir, 'og-image.png'))) {
+    return { url: '/og-image.png', size: { w: 1200, h: 630 } };
+  }
+  return {
+    url: placeholder(1200, 630, `${SITE_NAME}+—+${SITE_TAGLINE}`, PH_BG, PH_FG),
+    size: { w: 1200, h: 630 }
+  };
 }
 
 // ============================================================
@@ -398,16 +436,8 @@ async function main() {
       // Immagine card: preview.png (quadrata, per la griglia)
       const imgPath = getGameImage(gameDir, repo.name);
 
-      // Immagine OG: og.png (1200×630) se esiste, altrimenti usa preview.png
-      let ogImgPath = imgPath;
-      let ogImgSize = null;
-      for (const ext of ['png', 'jpg', 'webp']) {
-        if (fs.existsSync(path.join(gameDir, `og.${ext}`))) {
-          ogImgPath = `/${repo.name}/og.${ext}`;
-          ogImgSize = { w: 1200, h: 630 };
-          break;
-        }
-      }
+      // Immagine OG: og.png (1200×630) o placehold.co
+      const ogImg = getGameOgImage(gameDir, repo.name, cfg.title);
 
       const gameUrl = `/${repo.name}/`;
       const canonical = SITE_URL + gameUrl;
@@ -421,7 +451,7 @@ async function main() {
         playMode: cfg.playMode,
         url: gameUrl,
         img: imgPath,
-        ogImg: ogImgPath,
+        ogImg: ogImg.url,
         slug: repo.name,
       };
 
@@ -433,7 +463,7 @@ async function main() {
         const html = gameTemplate
           .replace(/{{LANG}}/g,      SITE_LANG)
           .replace(/{{HEAD_TAGS}}/g,  headTags(pageTitle, canonical))
-          .replace(/{{SEO_TAGS}}/g,   seoTags(cfg.title, cfg.description, ogImgPath, canonical, 'game', cfg.keywords, ogImgSize))
+          .replace(/{{SEO_TAGS}}/g,   seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'game', cfg.keywords, ogImg.size))
           .replace(/{{JSON_LD}}/g,    gameJsonLd(game))
           .replace(/{{STYLES}}/g,     COMMON_STYLES)
           .replace(/{{SITE_NAME}}/g,  esc(SITE_NAME))
@@ -464,15 +494,14 @@ async function main() {
 
   // Titolo OG: deve essere 30-60 caratteri
   const homeOgTitle = `${SITE_NAME} — ${SITE_TAGLINE} | Play Instantly`;
-  // OG image: usa og-image.png (1200×630) se esiste, altrimenti icon-512
-  const homeOgImg = fs.existsSync(path.join(OUTPUT_DIR, 'og-image.png')) ? '/og-image.png' : '/icon-512.png';
-  const homeOgSize = homeOgImg === '/og-image.png' ? { w: 1200, h: 630 } : null;
+  // OG image homepage: og-image.png o placehold.co
+  const homeOg = getHomeOgImage(OUTPUT_DIR);
 
   const homeTitle = `${SITE_NAME} — ${SITE_TAGLINE}`;
   const indexHtml = indexTemplate
     .replace(/{{LANG}}/g,         SITE_LANG)
     .replace(/{{HEAD_TAGS}}/g,    headTags(homeTitle, SITE_URL + '/'))
-    .replace(/{{SEO_TAGS}}/g,     seoTags(homeOgTitle, SITE_DESC, homeOgImg, SITE_URL + '/', 'website', [], homeOgSize))
+    .replace(/{{SEO_TAGS}}/g,     seoTags(homeOgTitle, SITE_DESC, homeOg.url, SITE_URL + '/', 'website', [], homeOg.size))
     .replace(/{{JSON_LD}}/g,      homeJsonLd(gamesData))
     .replace(/{{STYLES}}/g,       COMMON_STYLES)
     .replace(/{{SITE_NAME}}/g,    esc(SITE_NAME))
