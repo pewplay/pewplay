@@ -239,84 +239,64 @@ function readGameConfig(gameDir, slug, repoDescription) {
 }
 
 // ============================================================
-//  PLACEHOLDER IMAGES — generati come SVG locali durante il build
-//  Nessuna dipendenza esterna, funzionano sempre offline.
+//  PLACEHOLDER IMAGES — scaricati come PNG durante il build
+//  Usa placehold.co al momento del build, salva i file in locale.
+//  A runtime il sito serve solo file statici propri.
 // ============================================================
-const PH_BG     = '#1a1a2e';
-const PH_ACCENT = '#7C5CFC';
+const PH_BG     = '1a1a2e';
+const PH_ACCENT = '7C5CFC';
 
-// Genera un SVG placeholder e lo salva su disco, ritorna il path relativo
-function generatePlaceholder(filePath, w, h, text, bg = PH_BG, fg = '#fff') {
-  // Dividi il testo in righe se troppo lungo
-  const maxChars = Math.floor(w / (h > 500 ? 18 : 28));
-  let lines = [];
-  if (text.length <= maxChars) {
-    lines = [text];
-  } else {
-    const words = text.split(' ');
-    let line = '';
-    for (const word of words) {
-      if ((line + ' ' + word).trim().length > maxChars) {
-        if (line) lines.push(line.trim());
-        line = word;
-      } else {
-        line = (line + ' ' + word).trim();
-      }
+// Scarica un placeholder PNG da placehold.co e lo salva su disco
+async function downloadPlaceholder(filePath, w, h, text, bg = PH_BG, fg = 'ffffff') {
+  const url = `https://placehold.co/${w}x${h}/${bg}/${fg}/png?text=${encodeURIComponent(text)}&font=raleway`;
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      const buffer = Buffer.from(await res.arrayBuffer());
+      fs.writeFileSync(filePath, buffer);
+      return true;
     }
-    if (line) lines.push(line.trim());
+  } catch (e) {
+    console.warn(`   ⚠️ Placeholder download fallito: ${e.message}`);
   }
-
-  const fontSize = Math.min(Math.floor(w / 12), Math.floor(h / 6), 48);
-  const lineHeight = fontSize * 1.3;
-  const startY = (h / 2) - ((lines.length - 1) * lineHeight / 2);
-
-  const textEls = lines.map((l, i) =>
-    `<text x="${w/2}" y="${startY + i * lineHeight}" text-anchor="middle" dominant-baseline="central" fill="${fg}" font-family="system-ui,-apple-system,sans-serif" font-weight="700" font-size="${fontSize}">${esc(l)}</text>`
-  ).join('');
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-  <rect width="${w}" height="${h}" fill="${bg}" rx="0"/>
-  ${textEls}
-</svg>`;
-
-  fs.writeFileSync(filePath, svg);
+  return false;
 }
 
 // Card homepage: preview.png (quadrata)
-function getGameImage(gameDir, slug) {
+// Ritorna il path, segna il placeholder da scaricare se manca
+function getGameImage(gameDir, slug, pendingDownloads) {
   for (const ext of ['png', 'jpg', 'webp']) {
     if (fs.existsSync(path.join(gameDir, `preview.${ext}`))) {
       return `/${slug}/preview.${ext}`;
     }
   }
-  // Genera SVG placeholder nella cartella del gioco
-  const phFile = 'preview-placeholder.svg';
-  generatePlaceholder(path.join(gameDir, phFile), 512, 512, prettifySlug(slug), PH_ACCENT);
+  const phFile = 'preview.png';
+  const phPath = path.join(gameDir, phFile);
+  pendingDownloads.push({ path: phPath, w: 512, h: 512, text: prettifySlug(slug), bg: PH_ACCENT });
   return `/${slug}/${phFile}`;
 }
 
 // OG image per social: og.png (1200×630)
-function getGameOgImage(gameDir, slug, title) {
+function getGameOgImage(gameDir, slug, title, pendingDownloads) {
   for (const ext of ['png', 'jpg', 'webp']) {
     if (fs.existsSync(path.join(gameDir, `og.${ext}`))) {
       return { url: `/${slug}/og.${ext}`, size: { w: 1200, h: 630 } };
     }
   }
-  // Genera SVG placeholder OG nella cartella del gioco
-  const phFile = 'og-placeholder.svg';
-  generatePlaceholder(path.join(gameDir, phFile), 1200, 630, title, PH_BG);
+  const phFile = 'og.png';
+  const phPath = path.join(gameDir, phFile);
+  pendingDownloads.push({ path: phPath, w: 1200, h: 630, text: title, bg: PH_BG });
   return { url: `/${slug}/${phFile}`, size: { w: 1200, h: 630 } };
 }
 
 // OG image homepage
-function getHomeOgImage(outputDir) {
+function getHomeOgImage(outputDir, pendingDownloads) {
   if (fs.existsSync(path.join(outputDir, 'og-image.png'))) {
     return { url: '/og-image.png', size: { w: 1200, h: 630 } };
   }
-  // Genera SVG placeholder homepage
-  const phFile = 'og-placeholder.svg';
-  generatePlaceholder(path.join(outputDir, phFile), 1200, 630, `${SITE_NAME} — ${SITE_TAGLINE}`, PH_BG);
-  return { url: `/${phFile}`, size: { w: 1200, h: 630 } };
+  const phPath = path.join(outputDir, 'og-image.png');
+  pendingDownloads.push({ path: phPath, w: 1200, h: 630, text: `${SITE_NAME} — ${SITE_TAGLINE}`, bg: PH_BG });
+  return { url: '/og-image.png', size: { w: 1200, h: 630 } };
 }
 
 // ============================================================
@@ -437,6 +417,7 @@ async function main() {
   console.log(`Trovati ${gameRepos.length} giochi.\n`);
 
   const gamesData = [];
+  const pendingDownloads = []; // placeholder PNG da scaricare alla fine
 
   // 3. Clona tutti i repo in parallelo
   console.log(`⬇️  Clonazione parallela di ${gameRepos.length} repo...\n`);
@@ -467,10 +448,10 @@ async function main() {
       const cfg = readGameConfig(gameDir, repo.name, repo.description);
 
       // Immagine card: preview.png (quadrata, per la griglia)
-      const imgPath = getGameImage(gameDir, repo.name);
+      const imgPath = getGameImage(gameDir, repo.name, pendingDownloads);
 
-      // Immagine OG: og.png (1200×630) o placehold.co
-      const ogImg = getGameOgImage(gameDir, repo.name, cfg.title);
+      // Immagine OG: og.png (1200×630) o placeholder PNG
+      const ogImg = getGameOgImage(gameDir, repo.name, cfg.title, pendingDownloads);
 
       const gameUrl = `/${repo.name}/`;
       const canonical = SITE_URL + gameUrl;
@@ -528,7 +509,7 @@ async function main() {
   // Titolo OG: deve essere 30-60 caratteri
   const homeOgTitle = `${SITE_NAME} — ${SITE_TAGLINE} | Play Instantly`;
   // OG image homepage: og-image.png o placehold.co
-  const homeOg = getHomeOgImage(OUTPUT_DIR);
+  const homeOg = getHomeOgImage(OUTPUT_DIR, pendingDownloads);
 
   const homeTitle = `${SITE_NAME} — ${SITE_TAGLINE}`;
   const indexHtml = indexTemplate
@@ -701,6 +682,17 @@ self.addEventListener('fetch',function(e){
   }));
 });
 `);
+
+  // 8. Scarica placeholder PNG mancanti in parallelo
+  if (pendingDownloads.length > 0) {
+    console.log(`🖼️  Scaricamento ${pendingDownloads.length} placeholder PNG...`);
+    const results = await Promise.all(
+      pendingDownloads.map(d => downloadPlaceholder(d.path, d.w, d.h, d.text, d.bg))
+    );
+    const ok = results.filter(Boolean).length;
+    const fail = results.length - ok;
+    console.log(`   ✓ ${ok} scaricati${fail ? `, ⚠️ ${fail} falliti` : ''}`);
+  }
 
   console.log(`\n✅ Build completata — ${gamesData.length} giochi → ${OUTPUT_DIR}/`);
   console.log(`   ${SITE_URL}\n`);
