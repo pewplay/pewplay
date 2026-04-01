@@ -267,8 +267,12 @@ function headTags(pageTitle, canonicalUrl) {
   `;
 }
 
-function seoTags(title, description, image, url, type = 'website', keywords = []) {
+function seoTags(title, description, image, url, type = 'website', keywords = [], imgSize = null) {
   const absImg = image.startsWith('http') ? image : SITE_URL + image;
+  // Solo dichiarare dimensioni se le conosciamo
+  const imgDims = imgSize
+    ? `<meta property="og:image:width" content="${imgSize.w}">\n  <meta property="og:image:height" content="${imgSize.h}">`
+    : '';
   return `
   <meta name="description" content="${esc(description)}">
   ${keywords.length ? `<meta name="keywords" content="${esc(keywords.join(', '))}">` : ''}
@@ -277,8 +281,7 @@ function seoTags(title, description, image, url, type = 'website', keywords = []
   <meta property="og:title" content="${esc(title)}">
   <meta property="og:description" content="${esc(description)}">
   <meta property="og:image" content="${absImg}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
+  ${imgDims}
   ${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(title)}">
@@ -294,7 +297,7 @@ function gameJsonLd(g) {
     name: g.name,
     description: g.description,
     url: SITE_URL + g.url,
-    image: absUrl(g.img),
+    image: absUrl(g.ogImg || g.img),
     playMode: g.playMode || "SinglePlayer",
     applicationCategory: g.category || "Game",
     gamePlatform: "Web Browser",
@@ -392,8 +395,19 @@ async function main() {
       // Leggi game.json (o seo.json per retrocompatibilità)
       const cfg = readGameConfig(gameDir, repo.name, repo.description);
 
-      // Immagine: preview.png — semplice
+      // Immagine card: preview.png (quadrata, per la griglia)
       const imgPath = getGameImage(gameDir, repo.name);
+
+      // Immagine OG: og.png (1200×630) se esiste, altrimenti usa preview.png
+      let ogImgPath = imgPath;
+      let ogImgSize = null;
+      for (const ext of ['png', 'jpg', 'webp']) {
+        if (fs.existsSync(path.join(gameDir, `og.${ext}`))) {
+          ogImgPath = `/${repo.name}/og.${ext}`;
+          ogImgSize = { w: 1200, h: 630 };
+          break;
+        }
+      }
 
       const gameUrl = `/${repo.name}/`;
       const canonical = SITE_URL + gameUrl;
@@ -407,6 +421,7 @@ async function main() {
         playMode: cfg.playMode,
         url: gameUrl,
         img: imgPath,
+        ogImg: ogImgPath,
         slug: repo.name,
       };
 
@@ -418,7 +433,7 @@ async function main() {
         const html = gameTemplate
           .replace(/{{LANG}}/g,      SITE_LANG)
           .replace(/{{HEAD_TAGS}}/g,  headTags(pageTitle, canonical))
-          .replace(/{{SEO_TAGS}}/g,   seoTags(cfg.title, cfg.description, imgPath, canonical, 'game', cfg.keywords))
+          .replace(/{{SEO_TAGS}}/g,   seoTags(cfg.title, cfg.description, ogImgPath, canonical, 'game', cfg.keywords, ogImgSize))
           .replace(/{{JSON_LD}}/g,    gameJsonLd(game))
           .replace(/{{STYLES}}/g,     COMMON_STYLES)
           .replace(/{{SITE_NAME}}/g,  esc(SITE_NAME))
@@ -447,11 +462,17 @@ async function main() {
       <span class="game-card__name">${esc(g.name)}</span>
     </a>`).join('');
 
+  // Titolo OG: deve essere 30-60 caratteri
+  const homeOgTitle = `${SITE_NAME} — ${SITE_TAGLINE} | Play Instantly`;
+  // OG image: usa og-image.png (1200×630) se esiste, altrimenti icon-512
+  const homeOgImg = fs.existsSync(path.join(OUTPUT_DIR, 'og-image.png')) ? '/og-image.png' : '/icon-512.png';
+  const homeOgSize = homeOgImg === '/og-image.png' ? { w: 1200, h: 630 } : null;
+
   const homeTitle = `${SITE_NAME} — ${SITE_TAGLINE}`;
   const indexHtml = indexTemplate
     .replace(/{{LANG}}/g,         SITE_LANG)
     .replace(/{{HEAD_TAGS}}/g,    headTags(homeTitle, SITE_URL + '/'))
-    .replace(/{{SEO_TAGS}}/g,     seoTags(homeTitle, SITE_DESC, '/icon-512.png', SITE_URL + '/'))
+    .replace(/{{SEO_TAGS}}/g,     seoTags(homeOgTitle, SITE_DESC, homeOgImg, SITE_URL + '/', 'website', [], homeOgSize))
     .replace(/{{JSON_LD}}/g,      homeJsonLd(gamesData))
     .replace(/{{STYLES}}/g,       COMMON_STYLES)
     .replace(/{{SITE_NAME}}/g,    esc(SITE_NAME))
@@ -526,6 +547,7 @@ async function main() {
   const iconFiles = [
     'favicon.png', 'icon-32.png', 'icon-192.png', 'icon-512.png',
     'icon-maskable-192.png', 'icon-maskable-512.png',
+    'og-image.png',
     'screenshot-wide.png', 'screenshot-narrow.png'
   ];
   const fallback = path.join(__dirname, 'favicon.png');
@@ -534,8 +556,8 @@ async function main() {
     const dst = path.join(OUTPUT_DIR, f);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, dst);
-    } else if (!f.startsWith('screenshot') && fs.existsSync(fallback)) {
-      // Fallback solo per le icone, non per gli screenshot
+    } else if (!f.startsWith('screenshot') && !f.startsWith('og-') && fs.existsSync(fallback)) {
+      // Fallback solo per le icone, non per screenshot/og
       fs.copyFileSync(fallback, dst);
     }
   }

@@ -54,7 +54,8 @@ All settings are controlled via environment variables (or edit the top of `build
 1. Create a repo in your organization with an `index.html` at the root
 2. Add the topic **`web-game`** to the repo
 3. Add a **`preview.png`** (512×512 recommended) for the card thumbnail
-4. Add a **`game.json`** with your game's metadata:
+4. *(Optional)* Add an **`og.png`** (1200×630) for social share previews with correct ratio
+5. Add a **`game.json`** with your game's metadata:
 
 ```json
 {
@@ -91,7 +92,8 @@ Place icon files in the project root. Only `favicon.png` is required — it's us
 | `favicon.png`            | any       | Fallback for all icons           |
 | `icon-32.png`            | 32×32     | Browser favicon                  |
 | `icon-192.png`           | 192×192   | PWA icon, Apple touch icon       |
-| `icon-512.png`           | 512×512   | PWA splash, OG image             |
+| `icon-512.png`           | 512×512   | PWA splash                       |
+| `og-image.png`           | 1200×630  | Open Graph / social share image  |
 | `icon-maskable-192.png`  | 192×192   | PWA adaptive icon (with padding) |
 | `icon-maskable-512.png`  | 512×512   | PWA adaptive icon (with padding) |
 | `screenshot-wide.png`    | 1280×720  | PWA install prompt (desktop)     |
