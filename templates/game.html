@@ -7,50 +7,106 @@
   <style>
     {{STYLES}}
     html, body { height: 100%; overflow: hidden; }
-    iframe {
+
+    /* ── GAME AREA ─────────────────────────── */
+    .game-area {
       position: fixed;
       top: var(--header-h); left: 0;
       width: 100%;
       height: calc(100% - var(--header-h));
-      border: none;
-      background: #000;
     }
-    .header-btn {
-      display: inline-flex;
+
+    /* ── LOADING SPLASH ────────────────────── */
+    .splash {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 34px; height: 34px;
-      border-radius: 10px;
-      background: var(--accent-soft);
-      color: var(--text-2);
-      border: none;
-      cursor: pointer;
-      transition: background .2s, color .2s, transform .15s;
+      background: var(--bg);
+      transition: opacity .4s, visibility .4s;
     }
-    .header-btn:hover { background: var(--accent); color: #fff; transform: scale(1.05); }
-    .header-btn svg { width: 16px; height: 16px; }
+    .splash.loaded {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splash-icon {
+      width: 100px; height: 100px;
+      border-radius: 22px;
+      object-fit: cover;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+      margin-bottom: 18px;
+    }
+    .splash-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .splash-sub {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-bottom: 24px;
+    }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── IFRAME ─────────────────────────────── */
+    .game-area iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 1;
+      background: transparent;
+    }
   </style>
 </head>
 <body>
   <header>
-    <a href="/" class="back-btn" aria-label="Back to home">&#8592;</a>
+    <a href="/" class="header-btn" aria-label="Back to home" title="Back">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </a>
     <span class="game-title">{{TITLE}}</span>
     <span class="spacer"></span>
     {{THEME_TOGGLE}}
     <button class="header-btn" id="fs-btn" aria-label="Fullscreen" title="Fullscreen">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
       </svg>
     </button>
   </header>
 
-  <iframe src="internal.html" id="game-frame" allowfullscreen></iframe>
+  <div class="game-area">
+    <div class="splash" id="splash">
+      <img class="splash-icon" src="{{GAME_IMG}}" alt="{{TITLE}}">
+      <div class="splash-title">{{TITLE}}</div>
+      <div class="splash-sub">Loading…</div>
+      <div class="spinner"></div>
+    </div>
+    <iframe src="internal.html" id="game-frame" allowfullscreen></iframe>
+  </div>
 
   <script>
+    var frame = document.getElementById('game-frame');
+    var splash = document.getElementById('splash');
+    frame.addEventListener('load', function() { splash.classList.add('loaded'); });
+    setTimeout(function() { splash.classList.add('loaded'); }, 6000);
     document.getElementById('fs-btn').addEventListener('click', function() {
-      var el = document.getElementById('game-frame');
-      if (el.requestFullscreen) el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      if (frame.requestFullscreen) frame.requestFullscreen();
+      else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
     });
   </script>
   {{THEME_SCRIPT}}

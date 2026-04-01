@@ -111,10 +111,10 @@ const COMMON_STYLES = `
     color:var(--text);
     height:var(--header-h);
     display:flex;align-items:center;
-    padding:0 20px;position:fixed;
+    padding:0 16px;position:fixed;
     top:0;left:0;right:0;z-index:1000;
     box-shadow:var(--header-shadow);
-    gap:12px;
+    gap:10px;
     transition: background .3s, box-shadow .3s;
   }
   header .logo{
@@ -123,38 +123,35 @@ const COMMON_STYLES = `
     font-weight:800;font-size:19px;letter-spacing:-.3px;
   }
   header .logo img{width:30px;height:30px;border-radius:8px}
-  header .back-btn{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:34px;height:34px;border-radius:10px;
-    background:var(--accent-soft);color:var(--accent);
-    text-decoration:none;font-size:18px;
-    transition:background .2s,transform .15s;
-  }
-  header .back-btn:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
   header .game-title{
     font-weight:600;font-size:15px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    min-width:0;
   }
   header .spacer{flex:1}
 
-  /* ── THEME TOGGLE ───────────────────────────── */
-  .theme-toggle{
+  /* Bottone unificato per header (back, theme, fullscreen) */
+  .header-btn{
     display:inline-flex;align-items:center;justify-content:center;
-    width:34px;height:34px;border-radius:10px;
+    width:36px;height:36px;border-radius:10px;flex-shrink:0;
     background:var(--accent-soft);
-    border:none;cursor:pointer;
     color:var(--text-2);
+    border:none;cursor:pointer;
+    text-decoration:none;
     transition:background .2s,color .2s,transform .15s;
   }
-  .theme-toggle:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
-  .theme-toggle svg{width:18px;height:18px}
-  .theme-toggle .icon-sun{display:none}
-  .theme-toggle .icon-moon{display:block}
-  [data-theme="dark"] .theme-toggle .icon-sun{display:block}
-  [data-theme="dark"] .theme-toggle .icon-moon{display:none}
+  .header-btn:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
+  .header-btn:active{transform:scale(.95)}
+  .header-btn svg{width:18px;height:18px;flex-shrink:0}
+
+  /* ── THEME TOGGLE (extends .header-btn) ───── */
+  .header-btn .icon-sun{display:none}
+  .header-btn .icon-moon{display:block}
+  [data-theme="dark"] .header-btn .icon-sun{display:block}
+  [data-theme="dark"] .header-btn .icon-moon{display:none}
   @media(prefers-color-scheme:dark){
-    :root:not([data-theme="light"]) .theme-toggle .icon-sun{display:block}
-    :root:not([data-theme="light"]) .theme-toggle .icon-moon{display:none}
+    :root:not([data-theme="light"]) .header-btn .icon-sun{display:block}
+    :root:not([data-theme="light"]) .header-btn .icon-moon{display:none}
   }
 
   main{margin-top:var(--header-h)}
@@ -162,7 +159,7 @@ const COMMON_STYLES = `
 
 // ── THEME TOGGLE BUTTON HTML ──
 const THEME_TOGGLE_HTML = `
-  <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+  <button class="header-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
     <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
     </svg>
@@ -426,6 +423,7 @@ async function main() {
           .replace(/{{STYLES}}/g,     COMMON_STYLES)
           .replace(/{{SITE_NAME}}/g,  esc(SITE_NAME))
           .replace(/{{TITLE}}/g,      esc(cfg.title))
+          .replace(/{{GAME_IMG}}/g,   imgPath)
           .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
           .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
 
