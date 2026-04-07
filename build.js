@@ -219,6 +219,7 @@ function headTags(pageTitle, canonicalUrl) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${esc(pageTitle)}</title>
+  <link rel="icon" type="image/png" href="/icon-192.png">
   <link rel="icon" type="image/png" sizes="32x32"  href="/icon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="apple-touch-icon" href="/icon-192.png">
