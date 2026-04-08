@@ -534,15 +534,9 @@ async function main() {
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>${SITE_URL}/</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
   </url>
 ${gamesData.map(g => `  <url>
-    <loc>${SITE_URL}${g.url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>${sitemapImageTag(g)}
+    <loc>${SITE_URL}${g.url}</loc>${sitemapImageTag(g)}
   </url>`).join('\n')}
 </urlset>`);
 
