@@ -219,8 +219,8 @@ function headTags(pageTitle, canonicalUrl) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${esc(pageTitle)}</title>
-  <link rel="icon" type="image/png" href="/icon-192.png">
-  <link rel="icon" type="image/png" sizes="32x32"  href="/icon-32.png">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="manifest" href="/manifest.json">
@@ -497,22 +497,21 @@ async function main() {
 </body>
 </html>`);
 
-  // Icone — copia tutte le varianti disponibili, fallback su favicon.png
+  // Icone — copia tutte le varianti (devono essere già ridimensionate correttamente)
   const iconFiles = [
-    'favicon.png', 'icon-32.png', 'icon-192.png', 'icon-512.png',
+    'favicon.ico', 'favicon.png',
+    'icon-32.png', 'icon-192.png', 'icon-512.png',
     'icon-maskable-192.png', 'icon-maskable-512.png',
     'og-image.png',
     'screenshot-wide.png', 'screenshot-narrow.png'
   ];
-  const fallback = path.join(__dirname, 'favicon.png');
   for (const f of iconFiles) {
     const src = path.join(__dirname, f);
     const dst = path.join(OUTPUT_DIR, f);
     if (fs.existsSync(src)) {
       fs.copyFileSync(src, dst);
-    } else if (!f.startsWith('screenshot') && !f.startsWith('og-') && fs.existsSync(fallback)) {
-      // Fallback solo per le icone, non per screenshot/og
-      fs.copyFileSync(fallback, dst);
+    } else if (!f.startsWith('screenshot') && !f.startsWith('og-')) {
+      console.warn(`⚠️  Icona mancante: ${f} — generala con: python3 generate-icons.py`);
     }
   }
 
