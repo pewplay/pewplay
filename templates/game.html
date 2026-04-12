@@ -282,6 +282,9 @@
       var landing = document.getElementById('landing');
 
       function startGame() {
+        var headerH = document.querySelector('header').offsetHeight;
+        wrap.style.top = headerH + 'px';
+        wrap.style.height = 'calc(100% - ' + headerH + 'px)';
         wrap.classList.add('active');
         landing.style.display = 'none';
         frame.src = 'internal.html';
