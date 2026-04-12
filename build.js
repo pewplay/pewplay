@@ -380,25 +380,34 @@ async function main() {
         slug: repo.name,
       };
 
-      // Rinomina index → internal e crea wrapper
+      // Rinomina index → internal e crea landing page SEO
       const origIndex = path.join(gameDir, 'index.html');
       if (fs.existsSync(origIndex)) {
         fs.renameSync(origIndex, path.join(gameDir, 'internal.html'));
 
+        // Keyword tags HTML
+        const keywordTagsHtml = cfg.keywords
+          .map(k => `<span class="tag">${esc(k)}</span>`)
+          .join('');
+
         const html = gameTemplate
-          .replace(/{{LANG}}/g,      SITE_LANG)
-          .replace(/{{HEAD_TAGS}}/g,  headTags(pageTitle, canonical))
-          .replace(/{{SEO_TAGS}}/g,   seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'game', cfg.keywords, ogImg.size))
-          .replace(/{{JSON_LD}}/g,    gameJsonLd(game))
-          .replace(/{{STYLES}}/g,     COMMON_STYLES)
-          .replace(/{{SITE_NAME}}/g,  esc(SITE_NAME))
-          .replace(/{{TITLE}}/g,      esc(cfg.title))
-          .replace(/{{GAME_IMG}}/g,   imgPath)
-          .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
-          .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
+          .replace(/{{LANG}}/g,           SITE_LANG)
+          .replace(/{{HEAD_TAGS}}/g,       headTags(pageTitle, canonical))
+          .replace(/{{SEO_TAGS}}/g,        seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'game', cfg.keywords, ogImg.size))
+          .replace(/{{JSON_LD}}/g,         gameJsonLd(game))
+          .replace(/{{STYLES}}/g,          COMMON_STYLES)
+          .replace(/{{SITE_NAME}}/g,       esc(SITE_NAME))
+          .replace(/{{TITLE}}/g,           esc(cfg.title))
+          .replace(/{{GAME_IMG}}/g,        imgPath)
+          .replace(/{{CATEGORY}}/g,        esc(cfg.category))
+          .replace(/{{DESCRIPTION}}/g,     esc(cfg.description))
+          .replace(/{{KEYWORD_TAGS}}/g,    keywordTagsHtml)
+          .replace(/{{RELATED_SECTION}}/g, '') // placeholder — populated after all games are processed
+          .replace(/{{THEME_TOGGLE}}/g,    THEME_TOGGLE_HTML)
+          .replace(/{{THEME_SCRIPT}}/g,    THEME_TOGGLE_SCRIPT);
 
         fs.writeFileSync(origIndex, html);
-        console.log(`   ✓ wrapper → ${gameUrl}`);
+        console.log(`   ✓ landing → ${gameUrl}`);
       } else {
         console.warn(`   ⚠️ nessun index.html`);
       }
@@ -407,6 +416,36 @@ async function main() {
     } catch (e) {
       console.error(`   ❌ ${e.message}`);
     }
+  }
+
+  // 4b. Inject related games into each game page
+  console.log('\n🔗 Related Games');
+  for (const game of gamesData) {
+    const gamePage = path.join(OUTPUT_DIR, game.slug, 'index.html');
+    if (!fs.existsSync(gamePage)) continue;
+
+    // Pick up to 6 random other games as related
+    const others = gamesData.filter(g => g.slug !== game.slug);
+    const related = [];
+    const pool = [...others];
+    while (related.length < 6 && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      related.push(pool.splice(idx, 1)[0]);
+    }
+
+    let relatedHtml = '';
+    if (related.length > 0) {
+      const cards = related.map(g => `
+        <a href="${g.url}" class="related-card" aria-label="Play ${esc(g.name)}">
+          <img src="${g.img}" alt="${esc(g.name)}" loading="lazy" width="200" height="200">
+          <span class="related-card__name">${esc(g.name)}</span>
+        </a>`).join('');
+      relatedHtml = `<section class="related"><h2>More Games</h2><div class="related-grid">${cards}</div></section>`;
+    }
+
+    let html = fs.readFileSync(gamePage, 'utf8');
+    html = html.replace('{{RELATED_SECTION}}', relatedHtml);
+    fs.writeFileSync(gamePage, html);
   }
 
   // 4. Home Page

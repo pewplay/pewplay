@@ -6,17 +6,168 @@
   {{JSON_LD}}
   <style>
     {{STYLES}}
-    html, body { height: 100%; overflow: hidden; }
 
-    /* ── GAME AREA ─────────────────────────── */
-    .game-area {
-      position: fixed;
-      top: var(--header-h); left: 0;
-      width: 100%;
-      height: calc(100% - var(--header-h));
+    /* ── LANDING PAGE ─────────────────────────── */
+    .landing {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
     }
 
-    /* ── LOADING SPLASH ────────────────────── */
+    /* ── PREVIEW / PLAY BUTTON ────────────────── */
+    .preview-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: box-shadow .25s;
+    }
+    .preview-wrap:hover {
+      box-shadow: var(--shadow-card-hover);
+    }
+    .preview-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform .4s;
+    }
+    .preview-wrap:hover img {
+      transform: scale(1.03);
+    }
+    .preview-wrap .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.35);
+      transition: background .25s;
+    }
+    .preview-wrap:hover .play-overlay {
+      background: rgba(0,0,0,.5);
+    }
+    .play-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(124,92,252,.4);
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .25s;
+    }
+    .play-btn:hover {
+      transform: scale(1.06);
+      box-shadow: 0 12px 36px rgba(124,92,252,.55);
+    }
+    .play-btn:active { transform: scale(.96); }
+    .play-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    /* ── GAME INFO ─────────────────────────────── */
+    .game-info h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.4px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .game-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .game-meta .tag {
+      display: inline-block;
+      padding: 5px 12px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .2px;
+    }
+    .game-desc {
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--text-2);
+      margin-bottom: 28px;
+    }
+
+    /* ── RELATED GAMES ─────────────────────────── */
+    .related { margin-top: 36px; }
+    .related h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .related-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+    }
+    @media (min-width: 600px) {
+      .related-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+    }
+    .related-card {
+      aspect-ratio: 1;
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      background: var(--bg-card);
+      text-decoration: none;
+      display: block;
+      box-shadow: var(--shadow-card);
+      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .25s;
+    }
+    .related-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: var(--shadow-card-hover);
+    }
+    .related-card img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .related-card__name {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 22px 8px 8px;
+      background: var(--overlay-name);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* ── GAME PLAYING STATE ────────────────────── */
+    .game-frame-wrap {
+      position: fixed;
+      top: var(--header-h); left: 0;
+      width: 100%; height: calc(100% - var(--header-h));
+      z-index: 10;
+      display: none;
+      background: var(--bg);
+    }
+    .game-frame-wrap.active { display: block; }
+    .game-frame-wrap iframe {
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    /* ── LOADING SPLASH (inside frame wrap) ──── */
     .splash {
       position: absolute;
       inset: 0;
@@ -60,21 +211,18 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── IFRAME ─────────────────────────────── */
-    .game-area iframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-      z-index: 1;
-      background: transparent;
+    /* ── BACK BUTTON (playing state) ──────────── */
+    .back-to-info {
+      display: none;
+    }
+    .game-frame-wrap.active ~ header .back-to-info {
+      display: inline-flex;
     }
   </style>
 </head>
 <body>
   <header>
-    <a href="/" class="header-btn" aria-label="Back to home" title="Back">
+    <a href="/" class="header-btn" aria-label="Back to home" title="Home">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"/>
       </svg>
@@ -89,25 +237,69 @@
     </button>
   </header>
 
-  <div class="game-area">
+  <!-- ── LANDING PAGE (visible to Google) ──────── -->
+  <main class="landing" id="landing">
+    <div class="preview-wrap" id="play-trigger" role="button" tabindex="0" aria-label="Play {{TITLE}}">
+      <img src="{{GAME_IMG}}" alt="{{TITLE}} preview">
+      <div class="play-overlay">
+        <button class="play-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          Play Now
+        </button>
+      </div>
+    </div>
+
+    <div class="game-info">
+      <h1>{{TITLE}}</h1>
+      <div class="game-meta">
+        <span class="tag">{{CATEGORY}}</span>
+        {{KEYWORD_TAGS}}
+      </div>
+      <p class="game-desc">{{DESCRIPTION}}</p>
+    </div>
+
+    {{RELATED_SECTION}}
+  </main>
+
+  <!-- ── GAME FRAME (hidden until Play is clicked) ── -->
+  <div class="game-frame-wrap" id="game-wrap">
     <div class="splash" id="splash">
       <img class="splash-icon" src="{{GAME_IMG}}" alt="{{TITLE}}">
       <div class="splash-title">{{TITLE}}</div>
       <div class="splash-sub">Loading…</div>
       <div class="spinner"></div>
     </div>
-    <iframe src="internal.html" id="game-frame" allowfullscreen></iframe>
+    <!-- iframe src set by JS on play click -->
+    <iframe id="game-frame" allowfullscreen title="{{TITLE}}"></iframe>
   </div>
 
   <script>
-    var frame = document.getElementById('game-frame');
-    var splash = document.getElementById('splash');
-    frame.addEventListener('load', function() { splash.classList.add('loaded'); });
-    setTimeout(function() { splash.classList.add('loaded'); }, 6000);
-    document.getElementById('fs-btn').addEventListener('click', function() {
-      if (frame.requestFullscreen) frame.requestFullscreen();
-      else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
-    });
+    (function(){
+      var trigger = document.getElementById('play-trigger');
+      var wrap    = document.getElementById('game-wrap');
+      var frame   = document.getElementById('game-frame');
+      var splash  = document.getElementById('splash');
+      var landing = document.getElementById('landing');
+
+      function startGame() {
+        wrap.classList.add('active');
+        landing.style.display = 'none';
+        frame.src = 'internal.html';
+        frame.addEventListener('load', function() { splash.classList.add('loaded'); });
+        setTimeout(function() { splash.classList.add('loaded'); }, 6000);
+      }
+
+      trigger.addEventListener('click', startGame);
+      trigger.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(); }
+      });
+
+      document.getElementById('fs-btn').addEventListener('click', function() {
+        var el = wrap.classList.contains('active') ? frame : document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      });
+    })();
   </script>
   {{THEME_SCRIPT}}
 </body>
