@@ -280,6 +280,14 @@
       var frame   = document.getElementById('game-frame');
       var splash  = document.getElementById('splash');
       var landing = document.getElementById('landing');
+      var header  = document.querySelector('header');
+
+      function applyHeaderOffset() {
+        var h = header.offsetHeight;
+        landing.style.marginTop = h + 'px';
+      }
+      applyHeaderOffset();
+      window.addEventListener('resize', applyHeaderOffset);
 
       function startGame() {
         var headerH = document.querySelector('header').offsetHeight;
