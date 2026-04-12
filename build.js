@@ -637,6 +637,73 @@ self.addEventListener('fetch',function(e){
     console.log(`   ✓ ${ok} scaricati${fail ? `, ⚠️ ${fail} falliti` : ''}`);
   }
 
+  // 9. Ottimizzazione immagini → WebP
+  console.log('\n🔬 Ottimizzazione immagini → WebP');
+  try {
+    const sharp = require('sharp');
+
+    // Converte un'immagine in WebP e cancella l'originale
+    async function toWebp(srcPath, w, h, quality = 82) {
+      if (!fs.existsSync(srcPath)) return null;
+      const dstPath = srcPath.replace(/\.(png|jpe?g)$/i, '.webp');
+      try {
+        let pipeline = sharp(srcPath).webp({ quality });
+        if (w && h) pipeline = pipeline.resize(w, h, { fit: 'cover', withoutEnlargement: true });
+        await pipeline.toFile(dstPath);
+        fs.unlinkSync(srcPath);
+        return dstPath;
+      } catch (e) {
+        console.warn(`   ⚠️ ${path.basename(srcPath)}: ${e.message}`);
+        return null;
+      }
+    }
+
+    // Aggiorna i riferimenti .png/.jpg nei file HTML e nella sitemap
+    function updateRefs(filePath) {
+      if (!fs.existsSync(filePath)) return;
+      const original = fs.readFileSync(filePath, 'utf8');
+      const updated = original.replace(/(\/[^"'\s]+\/(?:preview|og))\.(png|jpe?g)/gi, '$1.webp')
+                               .replace(/(\/og-image)\.(png|jpe?g)/gi, '$1.webp');
+      if (updated !== original) fs.writeFileSync(filePath, updated);
+    }
+
+    // Converte immagini di ogni gioco in parallelo
+    const convJobs = gamesData.map(async g => {
+      const dir = path.join(OUTPUT_DIR, g.slug);
+      let converted = 0;
+      for (const [name, w, h] of [['preview', 512, 512], ['og', 1200, 630]]) {
+        for (const ext of ['png', 'jpg', 'jpeg']) {
+          const src = path.join(dir, `${name}.${ext}`);
+          if (await toWebp(src, w, h)) { converted++; break; }
+        }
+      }
+      // Aggiorna HTML del gioco
+      updateRefs(path.join(dir, 'index.html'));
+      return converted;
+    });
+
+    // Converte og-image homepage
+    for (const ext of ['png', 'jpg', 'jpeg']) {
+      if (await toWebp(path.join(OUTPUT_DIR, `og-image.${ext}`), 1200, 630)) break;
+    }
+
+    const totals = await Promise.all(convJobs);
+    const totalConverted = totals.reduce((a, b) => a + b, 0);
+
+    // Aggiorna home, sitemap e service worker
+    updateRefs(path.join(OUTPUT_DIR, 'index.html'));
+    updateRefs(path.join(OUTPUT_DIR, 'sitemap.xml'));
+    updateRefs(path.join(OUTPUT_DIR, 'service-worker.js'));
+
+    console.log(`   ✓ ${totalConverted} immagini convertite in WebP`);
+  } catch (e) {
+    if (e.code === 'MODULE_NOT_FOUND') {
+      console.warn('   ⚠️ sharp non installato — salta ottimizzazione (npm install)');
+    } else {
+      console.warn(`   ⚠️ Errore ottimizzazione: ${e.message}`);
+    }
+  }
+
   console.log(`\n✅ Build completata — ${gamesData.length} giochi → ${OUTPUT_DIR}/`);
   console.log(`   ${SITE_URL}\n`);
 }
