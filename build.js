@@ -572,9 +572,11 @@ async function main() {
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>${SITE_URL}/</loc>
+    <lastmod>${today}</lastmod>
   </url>
 ${gamesData.map(g => `  <url>
-    <loc>${SITE_URL}${g.url}</loc>${sitemapImageTag(g)}
+    <loc>${SITE_URL}${g.url}</loc>
+    <lastmod>${today}</lastmod>${sitemapImageTag(g)}
   </url>`).join('\n')}
 </urlset>`);
 
