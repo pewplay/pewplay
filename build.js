@@ -234,6 +234,9 @@ function headTags(pageTitle, canonicalUrl) {
 
 function seoTags(title, description, image, url, type = 'website', keywords = [], imgSize = null) {
   const absImg = image.startsWith('http') ? image : SITE_URL + image;
+  const imgType = absImg.toLowerCase().endsWith('.webp') ? 'image/webp' : (absImg.toLowerCase().match(/\.jpe?g$/) ? 'image/jpeg' : 'image/png');
+  const localeMap = { 'en': 'en_US', 'it': 'it_IT', 'es': 'es_ES', 'fr': 'fr_FR', 'de': 'de_DE' };
+  const locale = localeMap[SITE_LANG.split('-')[0].toLowerCase()] || 'en_US';
   // Solo dichiarare dimensioni se le conosciamo
   const imgDims = imgSize
     ? `<meta property="og:image:width" content="${imgSize.w}">\n  <meta property="og:image:height" content="${imgSize.h}">`
@@ -241,17 +244,22 @@ function seoTags(title, description, image, url, type = 'website', keywords = []
   return `
   <meta name="description" content="${esc(description)}">
   ${keywords.length ? `<meta name="keywords" content="${esc(keywords.join(', '))}">` : ''}
+  <meta property="og:locale" content="${locale}">
   <meta property="og:type" content="${type}">
   <meta property="og:site_name" content="${esc(SITE_NAME)}">
   <meta property="og:title" content="${esc(title)}">
   <meta property="og:description" content="${esc(description)}">
   <meta property="og:image" content="${absImg}">
+  <meta property="og:image:secure_url" content="${absImg}">
+  <meta property="og:image:type" content="${imgType}">
+  <meta property="og:image:alt" content="${esc(title)}">
   ${imgDims}
   ${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(title)}">
   <meta name="twitter:description" content="${esc(description)}">
   <meta name="twitter:image" content="${absImg}">
+  <meta name="twitter:image:alt" content="${esc(title)}">
   `;
 }
 
@@ -394,7 +402,7 @@ async function main() {
         const html = gameTemplate
           .replace(/{{LANG}}/g,           SITE_LANG)
           .replace(/{{HEAD_TAGS}}/g,       headTags(pageTitle, canonical))
-          .replace(/{{SEO_TAGS}}/g,        seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'game', cfg.keywords, ogImg.size))
+          .replace(/{{SEO_TAGS}}/g,        seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'website', cfg.keywords, ogImg.size))
           .replace(/{{JSON_LD}}/g,         gameJsonLd(game))
           .replace(/{{STYLES}}/g,          COMMON_STYLES)
           .replace(/{{SITE_NAME}}/g,       esc(SITE_NAME))
@@ -666,7 +674,8 @@ self.addEventListener('fetch',function(e){
       if (!fs.existsSync(filePath)) return;
       const original = fs.readFileSync(filePath, 'utf8');
       const updated = original.replace(/(\/[^"'\s]+\/(?:preview|og))\.(png|jpe?g)/gi, '$1.webp')
-                               .replace(/(\/og-image)\.(png|jpe?g)/gi, '$1.webp');
+                               .replace(/(\/og-image)\.(png|jpe?g)/gi, '$1.webp')
+                               .replace(/<meta property="og:image:type" content="image\/(png|jpeg)">/gi, '<meta property="og:image:type" content="image/webp">');
       if (updated !== original) fs.writeFileSync(filePath, updated);
     }
 
