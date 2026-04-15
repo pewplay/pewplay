@@ -221,6 +221,7 @@ function headTags(pageTitle, canonicalUrl) {
   <title>${esc(pageTitle)}</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="manifest" href="/manifest.json">
@@ -539,7 +540,7 @@ async function main() {
   // Icone — copia tutte le varianti (devono essere già ridimensionate correttamente)
   const iconFiles = [
     'favicon.ico', 'favicon.png',
-    'icon-32.png', 'icon-192.png', 'icon-512.png',
+    'icon-32.png', 'icon-48.png', 'icon-192.png', 'icon-512.png',
     'icon-maskable-192.png', 'icon-maskable-512.png',
     'og-image.png',
     'screenshot-wide.png', 'screenshot-narrow.png'

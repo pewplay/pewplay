@@ -4,7 +4,7 @@ from PIL import Image
 
 src = Image.open("favicon.png").convert("RGBA")
 
-for name, s in {"icon-32.png": 32, "icon-192.png": 192, "icon-512.png": 512}.items():
+for name, s in {"icon-32.png": 32, "icon-48.png": 48, "icon-192.png": 192, "icon-512.png": 512}.items():
     src.resize((s, s), Image.LANCZOS).save(name, "PNG")
     print(f"✅ {name} ({s}x{s})")
 
