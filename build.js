@@ -219,11 +219,11 @@ function headTags(pageTitle, canonicalUrl) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${esc(pageTitle)}</title>
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" href="${SITE_URL}/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="${SITE_URL}/icon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="${SITE_URL}/icon-48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/icon-192.png">
+  <link rel="apple-touch-icon" href="${SITE_URL}/icon-192.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="${THEME_COLOR}">
   <meta name="robots" content="index,follow">

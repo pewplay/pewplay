@@ -9,13 +9,13 @@
 
     /* ── LANDING PAGE ─────────────────────────── */
     .landing {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 28px 20px 60px;
     }
 
-    /* ── PREVIEW / PLAY BUTTON ────────────────── */
-    .preview-wrap {
+    /* ── GAME CONTAINER ───────────────────────── */
+    .game-container {
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
@@ -23,56 +23,13 @@
       overflow: hidden;
       background: var(--bg-card);
       box-shadow: var(--shadow-card);
-      cursor: pointer;
       margin-bottom: 24px;
-      transition: box-shadow .25s;
     }
-    .preview-wrap:hover {
-      box-shadow: var(--shadow-card-hover);
-    }
-    .preview-wrap img {
+    .game-container iframe {
       width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform .4s;
-    }
-    .preview-wrap:hover img {
-      transform: scale(1.03);
-    }
-    .preview-wrap .play-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,.35);
-      transition: background .25s;
-    }
-    .preview-wrap:hover .play-overlay {
-      background: rgba(0,0,0,.5);
-    }
-    .play-btn {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 32px;
-      background: var(--accent);
-      color: #fff;
       border: none;
-      border-radius: 14px;
-      font-family: var(--font);
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 8px 28px rgba(124,92,252,.4);
-      transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .25s;
+      display: block;
     }
-    .play-btn:hover {
-      transform: scale(1.06);
-      box-shadow: 0 12px 36px rgba(124,92,252,.55);
-    }
-    .play-btn:active { transform: scale(.96); }
-    .play-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
 
     /* ── GAME INFO ─────────────────────────────── */
     .game-info h1 {
@@ -152,22 +109,7 @@
       line-height: 1.3;
     }
 
-    /* ── GAME PLAYING STATE ────────────────────── */
-    .game-frame-wrap {
-      position: fixed;
-      top: var(--header-h); left: 0;
-      width: 100%; height: calc(100% - var(--header-h));
-      z-index: 10;
-      display: none;
-      background: var(--bg);
-    }
-    .game-frame-wrap.active { display: block; }
-    .game-frame-wrap iframe {
-      width: 100%; height: 100%;
-      border: none;
-    }
-
-    /* ── LOADING SPLASH (inside frame wrap) ──── */
+    /* ── LOADING SPLASH ───────────────────────── */
     .splash {
       position: absolute;
       inset: 0;
@@ -210,14 +152,6 @@
       animation: spin .65s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── BACK BUTTON (playing state) ──────────── */
-    .back-to-info {
-      display: none;
-    }
-    .game-frame-wrap.active ~ header .back-to-info {
-      display: inline-flex;
-    }
   </style>
 </head>
 <body>
@@ -239,14 +173,14 @@
 
   <!-- ── LANDING PAGE (visible to Google) ──────── -->
   <main class="landing" id="landing">
-    <div class="preview-wrap" id="play-trigger" role="button" tabindex="0" aria-label="Play {{TITLE}}">
-      <img src="{{GAME_IMG}}" alt="{{TITLE}} preview">
-      <div class="play-overlay">
-        <button class="play-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          Play Now
-        </button>
+    <div class="game-container" id="game-container">
+      <div class="splash" id="splash">
+        <img class="splash-icon" src="{{GAME_IMG}}" alt="{{TITLE}}" width="100" height="100" fetchpriority="high">
+        <div class="splash-title">{{TITLE}}</div>
+        <div class="splash-sub">Loading…</div>
+        <div class="spinner"></div>
       </div>
+      <iframe id="game-frame" src="internal.html" allowfullscreen title="{{TITLE}}"></iframe>
     </div>
 
     <div class="game-info">
@@ -261,22 +195,8 @@
     {{RELATED_SECTION}}
   </main>
 
-  <!-- ── GAME FRAME (hidden until Play is clicked) ── -->
-  <div class="game-frame-wrap" id="game-wrap">
-    <div class="splash" id="splash">
-      <img class="splash-icon" src="{{GAME_IMG}}" alt="{{TITLE}}">
-      <div class="splash-title">{{TITLE}}</div>
-      <div class="splash-sub">Loading…</div>
-      <div class="spinner"></div>
-    </div>
-    <!-- iframe src set by JS on play click -->
-    <iframe id="game-frame" allowfullscreen title="{{TITLE}}"></iframe>
-  </div>
-
   <script>
     (function(){
-      var trigger = document.getElementById('play-trigger');
-      var wrap    = document.getElementById('game-wrap');
       var frame   = document.getElementById('game-frame');
       var splash  = document.getElementById('splash');
       var landing = document.getElementById('landing');
@@ -289,26 +209,12 @@
       applyHeaderOffset();
       window.addEventListener('resize', applyHeaderOffset);
 
-      function startGame() {
-        var headerH = document.querySelector('header').offsetHeight;
-        wrap.style.top = headerH + 'px';
-        wrap.style.height = 'calc(100% - ' + headerH + 'px)';
-        wrap.classList.add('active');
-        landing.style.display = 'none';
-        frame.src = 'internal.html';
-        frame.addEventListener('load', function() { splash.classList.add('loaded'); });
-        setTimeout(function() { splash.classList.add('loaded'); }, 6000);
-      }
-
-      trigger.addEventListener('click', startGame);
-      trigger.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startGame(); }
-      });
+      frame.addEventListener('load', function() { splash.classList.add('loaded'); });
+      setTimeout(function() { splash.classList.add('loaded'); }, 6000);
 
       document.getElementById('fs-btn').addEventListener('click', function() {
-        var el = wrap.classList.contains('active') ? frame : document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        if (frame.requestFullscreen) frame.requestFullscreen();
+        else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
       });
     })();
   </script>
