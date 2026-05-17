@@ -9,21 +9,16 @@
 
     /* ── LANDING PAGE ─────────────────────────── */
     .landing {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 28px 20px 60px;
+      width: 100%;
     }
 
     /* ── GAME CONTAINER ───────────────────────── */
     .game-container {
       position: relative;
       width: 100%;
-      aspect-ratio: 16 / 9;
-      border-radius: var(--radius);
+      height: calc(100vh - var(--header-h));
       overflow: hidden;
-      background: var(--bg-card);
-      box-shadow: var(--shadow-card);
-      margin-bottom: 24px;
+      background: #000;
     }
     .game-container iframe {
       width: 100%; height: 100%;
@@ -32,6 +27,11 @@
     }
 
     /* ── GAME INFO ─────────────────────────────── */
+    .game-info {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 20px 10px;
+    }
     .game-info h1 {
       font-size: 24px;
       font-weight: 800;
@@ -63,7 +63,11 @@
     }
 
     /* ── RELATED GAMES ─────────────────────────── */
-    .related { margin-top: 36px; }
+    .related {
+      max-width: 900px;
+      margin: 20px auto 0;
+      padding: 0 20px 60px;
+    }
     .related h2 {
       font-size: 17px;
       font-weight: 700;
@@ -205,6 +209,7 @@
       function applyHeaderOffset() {
         var h = header.offsetHeight;
         landing.style.marginTop = h + 'px';
+        document.getElementById('game-container').style.height = (window.innerHeight - h) + 'px';
       }
       applyHeaderOffset();
       window.addEventListener('resize', applyHeaderOffset);
