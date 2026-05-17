@@ -201,7 +201,7 @@
       <h1><span>{{SITE_TAGLINE}}</span></h1>
       <p>{{GAMES_COUNT}} games — play instantly in your browser</p>
       <div class="search-box">
-        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <svg class="search-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
           <circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input type="search" id="search" placeholder="Search games…" aria-label="Search games" autocomplete="off">
@@ -224,8 +224,8 @@
       var input = document.getElementById('search');
       var orig  = grid.innerHTML;
 
-      input.addEventListener('input', function() {
-        var q = this.value.trim().toLowerCase();
+      function runSearch(val) {
+        var q = val.trim().toLowerCase();
         if (!q) { grid.innerHTML = orig; return; }
         var hits = games.filter(function(g){ return g.n.toLowerCase().indexOf(q) !== -1; });
         if (!hits.length) {
@@ -237,7 +237,19 @@
             '<img src="'+g.i+'" alt="'+g.n+'" loading="lazy" width="400" height="400">' +
             '<span class="game-card__name">'+g.n+'</span></a>';
         }).join('');
+      }
+
+      input.addEventListener('input', function() {
+        runSearch(this.value);
+        var newUrl = this.value ? '?q=' + encodeURIComponent(this.value) : window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
       });
+
+      var params = new URLSearchParams(window.location.search);
+      if (params.has('q')) {
+        input.value = params.get('q');
+        runSearch(input.value);
+      }
     })();
   </script>
   {{THEME_SCRIPT}}

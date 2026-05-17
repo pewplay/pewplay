@@ -92,10 +92,10 @@ const COMMON_STYLES = `
 // ── THEME TOGGLE BUTTON HTML ──
 const THEME_TOGGLE_HTML = `
   <button class="header-btn" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
-    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <svg class="icon-moon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
     </svg>
-    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <svg class="icon-sun" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
     </svg>
   </button>
@@ -232,7 +232,7 @@ function headTags(pageTitle, canonicalUrl) {
   `;
 }
 
-function seoTags(title, description, image, url, type = 'website', keywords = [], imgSize = null) {
+function seoTags(title, description, image, url, type = 'website', keywords = [], imgSize = null, author = null) {
   const absImg = image.startsWith('http') ? image : SITE_URL + image;
   const imgType = absImg.toLowerCase().endsWith('.webp') ? 'image/webp' : (absImg.toLowerCase().match(/\.jpe?g$/) ? 'image/jpeg' : 'image/png');
   const localeMap = { 'en': 'en_US', 'it': 'it_IT', 'es': 'es_ES', 'fr': 'fr_FR', 'de': 'de_DE' };
@@ -241,8 +241,9 @@ function seoTags(title, description, image, url, type = 'website', keywords = []
   const imgDims = imgSize
     ? `<meta property="og:image:width" content="${imgSize.w}">\n  <meta property="og:image:height" content="${imgSize.h}">`
     : '';
+  const authorTag = author ? `\n  <meta name="author" content="${esc(author)}">` : '';
   return `
-  <meta name="description" content="${esc(description)}">
+  <meta name="description" content="${esc(description)}">${authorTag}
   ${keywords.length ? `<meta name="keywords" content="${esc(keywords.join(', '))}">` : ''}
   <meta property="og:locale" content="${locale}">
   <meta property="og:type" content="${type}">
@@ -280,8 +281,19 @@ function gameJsonLd(g) {
     isAccessibleForFree: true,
   };
   if (g.author)          ld.author = { "@type": "Organization", name: g.author };
+  ld.publisher = { "@type": "Organization", name: SITE_NAME, url: SITE_URL };
   if (g.keywords?.length) ld.keywords = g.keywords.join(', ');
-  return `<script type="application/ld+json">${JSON.stringify(ld)}</script>`;
+
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL + "/" },
+      { "@type": "ListItem", position: 2, name: g.name, item: SITE_URL + g.url }
+    ]
+  };
+
+  return `<script type="application/ld+json">${JSON.stringify(ld)}</script>\n  <script type="application/ld+json">${JSON.stringify(breadcrumb)}</script>`;
 }
 
 function homeJsonLd(games) {
@@ -292,6 +304,14 @@ function homeJsonLd(games) {
     url: SITE_URL,
     description: SITE_DESC,
     inLanguage: SITE_LANG,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: SITE_URL + "/?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
   })}</script>
   <script type="application/ld+json">${JSON.stringify({
     "@context": "https://schema.org",
@@ -402,7 +422,7 @@ async function main() {
         const html = gameTemplate
           .replace(/{{LANG}}/g,           SITE_LANG)
           .replace(/{{HEAD_TAGS}}/g,       headTags(pageTitle, canonical))
-          .replace(/{{SEO_TAGS}}/g,        seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'website', cfg.keywords, ogImg.size))
+          .replace(/{{SEO_TAGS}}/g,        seoTags(cfg.title, cfg.description, ogImg.url, canonical, 'website', cfg.keywords, ogImg.size, cfg.author))
           .replace(/{{JSON_LD}}/g,         gameJsonLd(game))
           .replace(/{{STYLES}}/g,          COMMON_STYLES)
           .replace(/{{SITE_NAME}}/g,       esc(SITE_NAME))
