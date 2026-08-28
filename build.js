@@ -219,11 +219,12 @@ function headTags(pageTitle, canonicalUrl) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${esc(pageTitle)}</title>
-  <link rel="icon" href="${SITE_URL}/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="${SITE_URL}/icon-32.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="${SITE_URL}/icon-48.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/icon-192.png">
-  <link rel="apple-touch-icon" href="${SITE_URL}/icon-192.png">
+  <link rel="icon" type="image/x-icon" href="${SITE_URL}/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="${SITE_URL}/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="${SITE_URL}/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="${SITE_URL}/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/android-chrome-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="${SITE_URL}/android-chrome-512x512.png">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="${THEME_COLOR}">
   <meta name="robots" content="index,follow">
@@ -525,8 +526,8 @@ async function main() {
     categories: ['games', 'entertainment'],
     lang: SITE_LANG,
     icons: [
-      { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
       { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
     ],
@@ -556,7 +557,7 @@ async function main() {
 </head>
 <body>
   <header>
-    <a href="/" class="logo"><img src="/icon-32.png" alt="">${SITE_NAME}</a>
+    <a href="/" class="logo"><img src="/favicon-32x32.png" alt="">${SITE_NAME}</a>
     <span class="spacer"></span>
     ${THEME_TOGGLE_HTML}
   </header>
@@ -568,7 +569,9 @@ async function main() {
   // Icone — copia tutte le varianti (devono essere già ridimensionate correttamente)
   const iconFiles = [
     'favicon.ico', 'favicon.png',
-    'icon-32.png', 'icon-48.png', 'icon-192.png', 'icon-512.png',
+    'favicon-16x16.png', 'favicon-32x32.png',
+    'apple-touch-icon.png',
+    'android-chrome-192x192.png', 'android-chrome-512x512.png',
     'icon-maskable-192.png', 'icon-maskable-512.png',
     'og-image.png',
     'screenshot-wide.png', 'screenshot-narrow.png'
@@ -613,7 +616,7 @@ ${gamesData.map(g => `  <url>
   console.log('⚙️  Service Worker');
   fs.writeFileSync(path.join(OUTPUT_DIR, 'service-worker.js'), `
 var CACHE='${SITE_NAME.toLowerCase().replace(/[^a-z0-9]/g,'-')}-v2';
-var PRECACHE=['/','/index.html','/404.html','/icon-32.png','/icon-192.png','/icon-512.png','/manifest.json'];
+var PRECACHE=['/','/index.html','/404.html','/favicon-32x32.png','/android-chrome-192x192.png','/android-chrome-512x512.png','/manifest.json'];
 
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRECACHE)}));
