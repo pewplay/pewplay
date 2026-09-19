@@ -5,10 +5,10 @@ Static site generator that turns GitHub repos into a free online games arcade. Z
 ## How it works
 
 1. Scans a GitHub organization for repos tagged `web-game`
-2. Clones them all in parallel
+2. Clones them with bounded concurrency (5 at a time by default)
 3. Wraps each game in a page with header, SEO, splash screen, and iframe
 4. Generates a homepage with game grid, instant search, and light/dark mode
-5. Outputs everything to `dist/` — ready to deploy on Cloudflare Pages, Netlify, or any static host
+5. Outputs everything to `dist/` — ready for Cloudflare Workers Static Assets or any static host
 
 ## Quick Start
 
@@ -17,6 +17,7 @@ git clone https://github.com/your-org/pewplay.git
 cd pewplay
 cp .env.example .env       # edit with your org name and GitHub token
 export $(cat .env | xargs)
+npm install
 npm run build
 npx serve dist             # preview locally
 ```
@@ -34,6 +35,7 @@ Only `ORG_NAME` and `GH_TOKEN` are required. Everything else has sensible defaul
 | `SITE_TAGLINE` | no       | `Free Online Games`          | Subtitle on homepage         |
 | `SITE_DESC`    | no       | `Play the best free online…` | Homepage meta description    |
 | `SITE_LANG`    | no       | `en`                         | HTML `lang` attribute        |
+| `CLONE_CONCURRENCY` | no | `5` | Max simultaneous Git clones |
 
 ## Adding a Game
 
@@ -68,7 +70,7 @@ All fields are optional. Missing images get auto-generated as placeholder PNGs d
 
 ## What Gets Generated
 
-For every game the builder creates a wrapper page with header (back button, game title, theme toggle, fullscreen), a loading splash screen with the preview image, full SEO tags (Open Graph, Twitter Cards, JSON-LD `VideoGame` schema), and a canonical URL entry in the sitemap.
+For every game the builder creates a wrapper page with header (back button, game title, theme toggle, fullscreen). Fullscreen is applied to the player shell, so the PewPlay top bar remains visible, a loading splash screen with the preview image, full SEO tags (Open Graph, Twitter Cards, JSON-LD `VideoGame` schema), and a canonical URL entry in the sitemap.
 
 The homepage gets a responsive game grid with instant search, staggered card animations, and light/dark mode that follows the system preference.
 
@@ -112,15 +114,29 @@ Create maskable icons at [maskable.app/editor](https://maskable.app/editor).
 
 ## Deployment
 
-The `dist/` folder is a plain static site.
+The project includes `wrangler.jsonc` and is ready for **Cloudflare Workers Static Assets**. The generated site stays fully static; Wrangler only uploads `dist/`.
 
-**Cloudflare Pages**: connect the repo, set build command to `npm run build`, output directory to `dist`, and add `ORG_NAME` + `GH_TOKEN` as environment variables.
+For Cloudflare Workers Builds use:
 
-**Netlify / GitHub Pages / any static host**: same concept — run the build, serve `dist/`.
+```text
+Build command:  npm run build
+Deploy command: npm run deploy:only
+Root directory: /
+```
+
+Add `ORG_NAME` and `GH_TOKEN` to the build environment. `GH_TOKEN` should be stored as a secret. You do **not** need to configure an output directory in the dashboard because Wrangler reads `assets.directory = ./dist` from `wrangler.jsonc`.
+
+For a local one-command deployment:
+
+```bash
+npm run deploy
+```
+
+`npm run deploy` builds the site and then runs `wrangler deploy`. Other static hosts can still serve the generated `dist/` directory normally.
 
 ## Tech Stack
 
-No dependencies. Just Node.js ≥ 18 (for native `fetch`). The builder is a single `build.js` file (~700 lines) that produces pure HTML/CSS/JS output. The UI uses the Outfit font, CSS custom properties for theming, and zero JavaScript frameworks.
+Node.js ≥ 20. Runtime output is pure HTML/CSS/JS; build-time dependencies are `sharp` for image optimization and `wrangler` for Cloudflare deployment. The builder is a single `build.js` file that produces the static site. The UI uses the Outfit font, CSS custom properties for theming, and zero JavaScript frameworks.
 
 ## License
 

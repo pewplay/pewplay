@@ -6,7 +6,7 @@ Questa guida spiega passo per passo come impostare un repository GitHub perché 
 
 ## Come funziona
 
-Il builder di PewPlay scansiona tutti i repository della tua organizzazione GitHub che hanno il topic `web-game`, li clona tutti in parallelo, e per ognuno genera una pagina wrapper con header, splash screen, SEO completa e iframe. Il tuo gioco viene caricato dentro l'iframe.
+Il builder di PewPlay scansiona tutti i repository della tua organizzazione GitHub che hanno il topic `web-game`, li clona con concorrenza limitata, e per ognuno genera una pagina wrapper con header, splash screen, SEO completa e iframe. Il tuo gioco viene caricato dentro l'iframe.
 
 Tu devi solo creare un repo con i file giusti — il resto è automatico.
 
@@ -170,7 +170,7 @@ PewPlay carica il gioco in un iframe con un header di 52px. Simula così:
 
 ## Cosa puoi e non puoi usare
 
-I giochi girano su Cloudflare Pages come file statici dentro un iframe.
+I giochi vengono pubblicati come file statici tramite Cloudflare Workers Static Assets e girano dentro un iframe.
 
 **Puoi usare:** HTML, CSS, JS, Canvas 2D, WebGL, Web Audio, Gamepad API, ES Modules, immagini, audio, font, video, librerie da CDN (cdnjs, unpkg, esm.sh), localStorage (scoped al dominio PewPlay), WebSocket verso server esterni.
 
@@ -181,7 +181,7 @@ I giochi girano su Cloudflare Pages come file statici dentro un iframe.
 ## Cosa genera il builder
 
 Per ogni gioco:
-- Pagina wrapper con header (back, titolo, dark mode, fullscreen)
+- Pagina wrapper con header (back, titolo, dark mode, fullscreen); la barra resta visibile anche in fullscreen
 - Splash screen con `preview.png` e spinner durante il caricamento
 - `<title>`, meta description, Open Graph, Twitter Card, canonical URL
 - JSON-LD strutturato (schema `VideoGame`)
@@ -238,7 +238,7 @@ flappy-cat/
 
 **Le preview social sono tagliate male** → Aggiungi `og.png` a 1200×630 px.
 
-**Come aggiorno il gioco?** → Pusha su GitHub e rilancia la build di PewPlay. Clona sempre l'ultima versione.
+**Come aggiorno il gioco?** → Pusha su GitHub e rilancia la build/deploy di PewPlay. Il builder clona sempre l'ultima versione.
 
 **Posso usare React, Phaser, Three.js?** → Sì, ma committa i file buildati. Il builder non esegue `npm install` né `npm build`.
 

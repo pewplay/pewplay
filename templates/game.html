@@ -10,6 +10,32 @@
     /* ── LANDING PAGE ─────────────────────────── */
     .landing {
       width: 100%;
+      margin-top: 0;
+    }
+
+    .game-shell {
+      position: relative;
+      width: 100%;
+      padding-top: var(--header-h);
+      background: var(--bg);
+    }
+    .game-shell:fullscreen,
+    .game-shell:-webkit-full-screen {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      padding-top: var(--header-h);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .game-shell:fullscreen header,
+    .game-shell:-webkit-full-screen header {
+      position: absolute;
+    }
+    .game-shell:fullscreen .game-container,
+    .game-shell:-webkit-full-screen .game-container {
+      height: calc(100vh - var(--header-h));
+      height: calc(100dvh - var(--header-h));
     }
 
     /* ── GAME CONTAINER ───────────────────────── */
@@ -159,24 +185,23 @@
   </style>
 </head>
 <body>
-  <header>
-    <a href="/" class="header-btn" aria-label="Back to home" title="Home">
-      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-    </a>
-    <span class="game-title">{{TITLE}}</span>
-    <span class="spacer"></span>
-    {{THEME_TOGGLE}}
-    <button class="header-btn" id="fs-btn" aria-label="Fullscreen" title="Fullscreen">
-      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
-      </svg>
-    </button>
-  </header>
+  <section class="game-shell" id="game-shell" aria-label="{{TITLE}} game player">
+    <header>
+      <a href="/" class="header-btn" aria-label="Back to home" title="Home">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </a>
+      <span class="game-title">{{TITLE}}</span>
+      <span class="spacer"></span>
+      {{THEME_TOGGLE}}
+      <button class="header-btn" id="fs-btn" aria-label="Enter fullscreen" title="Fullscreen">
+        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+        </svg>
+      </button>
+    </header>
 
-  <!-- ── LANDING PAGE (visible to Google) ──────── -->
-  <main class="landing" id="landing">
     <div class="game-container" id="game-container">
       <div class="splash" id="splash">
         <img class="splash-icon" src="{{GAME_IMG}}" alt="{{TITLE}}" width="100" height="100" fetchpriority="high">
@@ -186,7 +211,10 @@
       </div>
       <iframe id="game-frame" src="internal.html" allowfullscreen title="{{TITLE}}"></iframe>
     </div>
+  </section>
 
+  <!-- ── LANDING PAGE (visible to Google) ──────── -->
+  <main class="landing" id="landing">
     <div class="game-info">
       <h1>{{TITLE}}</h1>
       <div class="game-meta">
@@ -201,26 +229,39 @@
 
   <script>
     (function(){
-      var frame   = document.getElementById('game-frame');
-      var splash  = document.getElementById('splash');
-      var landing = document.getElementById('landing');
-      var header  = document.querySelector('header');
-
-      function applyHeaderOffset() {
-        var h = header.offsetHeight;
-        landing.style.marginTop = h + 'px';
-        document.getElementById('game-container').style.height = (window.innerHeight - h) + 'px';
-      }
-      applyHeaderOffset();
-      window.addEventListener('resize', applyHeaderOffset);
+      var frame  = document.getElementById('game-frame');
+      var splash = document.getElementById('splash');
+      var shell  = document.getElementById('game-shell');
+      var fsBtn  = document.getElementById('fs-btn');
 
       frame.addEventListener('load', function() { splash.classList.add('loaded'); });
       setTimeout(function() { splash.classList.add('loaded'); }, 6000);
 
-      document.getElementById('fs-btn').addEventListener('click', function() {
-        if (frame.requestFullscreen) frame.requestFullscreen();
-        else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+      function isFullscreen() {
+        return document.fullscreenElement === shell || document.webkitFullscreenElement === shell;
+      }
+
+      function syncFullscreenButton() {
+        var active = isFullscreen();
+        fsBtn.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+        fsBtn.setAttribute('title', active ? 'Exit fullscreen' : 'Fullscreen');
+      }
+
+      fsBtn.addEventListener('click', function() {
+        if (isFullscreen()) {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          return;
+        }
+
+        // Fullscreen sul contenitore barra + gioco, non sull'iframe:
+        // così la barra superiore rimane sempre visibile.
+        if (shell.requestFullscreen) shell.requestFullscreen();
+        else if (shell.webkitRequestFullscreen) shell.webkitRequestFullscreen();
       });
+
+      document.addEventListener('fullscreenchange', syncFullscreenButton);
+      document.addEventListener('webkitfullscreenchange', syncFullscreenButton);
     })();
   </script>
   {{THEME_SCRIPT}}

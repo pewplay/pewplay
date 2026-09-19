@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 
 // ============================================================
@@ -12,6 +12,7 @@ const GH_TOKEN    = process.env.GH_TOKEN;
 const TOPIC_TAG   = 'web-game';
 const OUTPUT_DIR   = './dist';
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
+const CLONE_CONCURRENCY = Math.max(1, Number.parseInt(process.env.CLONE_CONCURRENCY || '5', 10) || 5);
 
 const SITE_URL     = process.env.SITE_URL     || 'https://www.pewplay.com';
 const SITE_NAME    = process.env.SITE_NAME    || 'PewPlay';
@@ -29,6 +30,74 @@ function esc(s) {
 
 function prettifySlug(slug) {
   return slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+
+function runCommand(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: ['ignore', 'ignore', 'pipe'],
+      ...options,
+    });
+
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
+    child.on('error', reject);
+    child.on('close', code => {
+      if (code === 0) return resolve();
+      const err = new Error(stderr.trim() || `${command} exited with code ${code}`);
+      err.code = code;
+      reject(err);
+    });
+  });
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runner() {
+    while (true) {
+      const index = nextIndex++;
+      if (index >= items.length) return;
+      results[index] = await worker(items[index], index);
+    }
+  }
+
+  const runners = Array.from(
+    { length: Math.min(limit, Math.max(items.length, 1)) },
+    () => runner()
+  );
+  await Promise.all(runners);
+  return results;
+}
+
+async function fetchOrgRepos(headers) {
+  const repos = [];
+  for (let page = 1; ; page++) {
+    const url = `https://api.github.com/orgs/${encodeURIComponent(ORG_NAME)}/repos?per_page=100&type=all&page=${page}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`GitHub API ${res.status}: impossibile leggere i repository`);
+    const batch = await res.json();
+    repos.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return repos;
+}
+
+async function cloneRepo(repo, gameDir) {
+  // Passa il token tramite configurazione Git in environment, mai nell'URL o nei log.
+  const basicAuth = Buffer.from(`x-access-token:${GH_TOKEN}`).toString('base64');
+  const env = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.extraHeader',
+    GIT_CONFIG_VALUE_0: `Authorization: Basic ${basicAuth}`,
+  };
+
+  await runCommand('git', ['clone', '--depth', '1', '--quiet', repo.clone_url, gameDir], { env });
+  fs.rmSync(path.join(gameDir, '.git'), { recursive: true, force: true });
 }
 
 // ============================================================
@@ -348,34 +417,42 @@ async function main() {
   if (fs.existsSync(OUTPUT_DIR)) fs.rmSync(OUTPUT_DIR, { recursive: true });
   fs.mkdirSync(OUTPUT_DIR);
 
-  // 2. Fetch repo
-  const headers = { Authorization: `token ${GH_TOKEN}`, 'User-Agent': 'Build-Script' };
-  const res = await fetch(`https://api.github.com/orgs/${ORG_NAME}/repos?per_page=100`, { headers });
-  if (!res.ok) { console.error(`GitHub API ${res.status}`); process.exit(1); }
+  // 2. Fetch repo (paginato: supporta anche organizzazioni con >100 repository)
+  const headers = {
+    Authorization: `Bearer ${GH_TOKEN}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': `${SITE_NAME}-Build`,
+  };
 
-  const repos = await res.json();
+  let repos;
+  try {
+    repos = await fetchOrgRepos(headers);
+  } catch (e) {
+    console.error(`ERRORE: ${e.message}`);
+    process.exit(1);
+  }
+
   const gameRepos = repos.filter(r => r.topics?.includes(TOPIC_TAG));
   console.log(`Trovati ${gameRepos.length} giochi.\n`);
 
   const gamesData = [];
   const pendingDownloads = []; // placeholder PNG da scaricare alla fine
 
-  // 3. Clona tutti i repo in parallelo
-  console.log(`⬇️  Clonazione parallela di ${gameRepos.length} repo...\n`);
-  await Promise.all(gameRepos.map(repo => {
+  // 3. Clona i repo con concorrenza limitata: veloce senza saturare la build.
+  console.log(`⬇️  Clonazione di ${gameRepos.length} repo (max ${CLONE_CONCURRENCY} contemporanei)...\n`);
+  await mapWithConcurrency(gameRepos, CLONE_CONCURRENCY, async repo => {
     const gameDir = path.join(OUTPUT_DIR, repo.name);
-    const authUrl = `https://${GH_TOKEN}@github.com/${ORG_NAME}/${repo.name}.git`;
-    return new Promise(resolve => {
-      try {
-        execSync(`git clone --depth 1 --quiet ${authUrl} ${gameDir}`);
-        fs.rmSync(path.join(gameDir, '.git'), { recursive: true, force: true });
-        resolve(true);
-      } catch (e) {
-        console.error(`   ❌ clone fallito: ${repo.name} — ${e.message}`);
-        resolve(false);
-      }
-    });
-  }));
+    try {
+      await cloneRepo(repo, gameDir);
+      console.log(`   ✓ ${repo.name}`);
+      return true;
+    } catch (e) {
+      console.error(`   ❌ clone fallito: ${repo.name} — ${e.message}`);
+      fs.rmSync(gameDir, { recursive: true, force: true });
+      return false;
+    }
+  });
 
   // 4. Processa ogni gioco (già clonato)
   for (const repo of gameRepos) {
