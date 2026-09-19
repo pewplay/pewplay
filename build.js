@@ -288,9 +288,9 @@ function headTags(pageTitle, canonicalUrl) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${esc(pageTitle)}</title>
-  <link rel="icon" type="image/x-icon" href="${SITE_URL}/favicon.ico">
-  <link rel="icon" type="image/png" sizes="16x16" href="${SITE_URL}/favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="${SITE_URL}/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="${SITE_URL}/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="${SITE_URL}/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/android-chrome-192x192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="${SITE_URL}/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/android-chrome-192x192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="${SITE_URL}/android-chrome-512x512.png">
@@ -645,7 +645,7 @@ async function main() {
 
   // Icone — copia tutte le varianti (devono essere già ridimensionate correttamente)
   const iconFiles = [
-    'favicon.ico', 'favicon.png',
+    'favicon-48x48.png', 'favicon-96x96.png',
     'favicon-16x16.png', 'favicon-32x32.png',
     'apple-touch-icon.png',
     'android-chrome-192x192.png', 'android-chrome-512x512.png',
@@ -693,7 +693,7 @@ ${gamesData.map(g => `  <url>
   console.log('⚙️  Service Worker');
   fs.writeFileSync(path.join(OUTPUT_DIR, 'service-worker.js'), `
 var CACHE='${SITE_NAME.toLowerCase().replace(/[^a-z0-9]/g,'-')}-v2';
-var PRECACHE=['/','/index.html','/404.html','/favicon-32x32.png','/android-chrome-192x192.png','/android-chrome-512x512.png','/manifest.json'];
+var PRECACHE=['/','/index.html','/404.html','/favicon-96x96.png','/favicon-48x48.png','/android-chrome-192x192.png','/android-chrome-512x512.png','/manifest.json'];
 
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRECACHE)}));
