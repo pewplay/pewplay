@@ -104,58 +104,37 @@ async function cloneRepo(repo, gameDir) {
 //  CSS CONDIVISO — LIGHT/DARK MODE
 // ============================================================
 const DARK_VARS = `
-    --bg:#0e0e14;--bg-card:#1a1a26;--bg-header:#141420;--bg-input:#1e1e2e;
-    --border:#2a2a3c;--text:#e8e8f0;--text-2:#8888a0;--text-3:#555568;
-    --shadow-card:0 2px 12px rgba(0,0,0,.25);
-    --shadow-card-hover:0 12px 32px rgba(124,92,252,.2);
-    --header-shadow:0 1px 0 rgba(255,255,255,.06);
-    --overlay-name:linear-gradient(transparent 30%,rgba(0,0,0,.88));`;
+    --bg:#0a0a0f;--bg-card:#14141d;--bg-header:rgba(10,10,15,.78);--bg-input:#171720;
+    --surface-elevated:#12121a;--surface-glass:rgba(18,18,26,.72);
+    --border:#252532;--border-soft:#1f1f2a;--text:#f2f2f7;--text-2:#a1a1b3;--text-3:#68687b;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.16);--shadow-md:0 10px 30px rgba(0,0,0,.18);--shadow-lg:0 18px 60px rgba(0,0,0,.28);
+    --shadow-card:0 3px 14px rgba(0,0,0,.18);--shadow-card-hover:0 16px 40px rgba(0,0,0,.28);
+    --header-shadow:0 1px 0 rgba(255,255,255,.055);--accent-haze:rgba(124,92,252,.16);`;
 
 const COMMON_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
-
-  :root {
-    --accent:#7C5CFC;
-    --accent-soft:rgba(124,92,252,.12);
-    --accent-glow:rgba(124,92,252,.35);
-    --radius:14px;
-    --header-h:52px;
-    --font:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    --bg:#f4f3f8;--bg-card:#fff;--bg-header:#fff;--bg-input:#eeedf3;
-    --border:#e0dfe6;--text:#1a1a2e;--text-2:#6b6b80;--text-3:#9d9db0;
-    --shadow-card:0 2px 12px rgba(0,0,0,.06);
-    --shadow-card-hover:0 12px 32px rgba(124,92,252,.15);
-    --header-shadow:0 1px 0 var(--border);
-    --overlay-name:linear-gradient(transparent 40%,rgba(0,0,0,.75));
+  :root{
+    --accent:#7C5CFC;--accent-2:#A78BFA;--accent-soft:rgba(124,92,252,.11);--accent-glow:rgba(124,92,252,.28);--accent-haze:rgba(124,92,252,.12);
+    --header-h:60px;--font:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    --bg:#f7f7fa;--bg-card:#fff;--bg-header:rgba(255,255,255,.78);--bg-input:#f3f2f7;
+    --surface-elevated:#fff;--surface-glass:rgba(255,255,255,.72);
+    --border:#e2e1e8;--border-soft:#ebeaf0;--text:#161622;--text-2:#69697d;--text-3:#9999aa;
+    --shadow-sm:0 1px 2px rgba(30,20,60,.04);--shadow-md:0 10px 30px rgba(35,25,70,.08);--shadow-lg:0 18px 60px rgba(35,25,70,.12);
+    --shadow-card:0 3px 14px rgba(30,20,60,.06);--shadow-card-hover:0 16px 40px rgba(55,35,110,.14);--header-shadow:0 1px 0 var(--border);
     color-scheme:light dark;
   }
   [data-theme="dark"]{${DARK_VARS}}
   @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){${DARK_VARS}}}
-
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
-
-  header{background:var(--bg-header);color:var(--text);height:var(--header-h);display:flex;align-items:center;padding:0 16px;position:fixed;top:0;left:0;right:0;z-index:1000;box-shadow:var(--header-shadow);gap:10px;transition:background .3s,box-shadow .3s}
-  header .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:800;font-size:19px;letter-spacing:-.3px}
-  header .logo img{width:30px;height:30px;border-radius:8px}
-  header .game-title{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  header .spacer{flex:1}
-
-  .header-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;flex-shrink:0;background:var(--accent-soft);color:var(--text-2);border:none;cursor:pointer;text-decoration:none;transition:background .2s,color .2s,transform .15s}
-  .header-btn:hover{background:var(--accent);color:#fff;transform:scale(1.05)}
-  .header-btn:active{transform:scale(.95)}
-  .header-btn svg{width:18px;height:18px;flex-shrink:0}
-
-  .header-btn .icon-sun{display:none}
-  .header-btn .icon-moon{display:block}
-  [data-theme="dark"] .header-btn .icon-sun{display:block}
-  [data-theme="dark"] .header-btn .icon-moon{display:none}
-  @media(prefers-color-scheme:dark){
-    :root:not([data-theme="light"]) .header-btn .icon-sun{display:block}
-    :root:not([data-theme="light"]) .header-btn .icon-moon{display:none}
-  }
-
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}button,input{font:inherit}a,button{-webkit-tap-highlight-color:transparent}
+  :focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:3px}
+  .site-header{position:fixed;inset:0 0 auto;z-index:1000;height:var(--header-h);background:var(--bg-header);border-bottom:1px solid var(--border);backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);box-shadow:var(--header-shadow);transition:background .25s,border-color .25s}
+  .header-inner{width:100%;max-width:1280px;height:100%;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:10px}
+  .logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text);font-weight:800;font-size:20px;letter-spacing:-.45px}.logo img{width:32px;height:32px;border-radius:9px;box-shadow:var(--shadow-sm)}.spacer{flex:1}.header-game-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:min(52vw,520px)}
+  .header-btn{display:inline-grid;place-items:center;width:38px;height:38px;border:1px solid var(--border);border-radius:11px;background:var(--surface-elevated);color:var(--text-2);cursor:pointer;text-decoration:none;transition:background .18s,color .18s,border-color .18s,transform .15s,box-shadow .18s;box-shadow:var(--shadow-sm)}.header-btn:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow-md)}.header-btn:active{transform:translateY(0) scale(.96)}.header-btn svg{width:18px;height:18px}.header-btn .icon-sun{display:none}.header-btn .icon-moon{display:block}[data-theme="dark"] .header-btn .icon-sun{display:block}[data-theme="dark"] .header-btn .icon-moon{display:none}@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .header-btn .icon-sun{display:block}:root:not([data-theme="light"]) .header-btn .icon-moon{display:none}}
+  .fs-exit{display:none}.is-fullscreen .fs-enter{display:none}.is-fullscreen .fs-exit{display:block}
   main{margin-top:var(--header-h)}
+  @media(max-width:520px){.header-inner{padding:0 14px}.logo{font-size:18px}.header-btn{width:36px;height:36px}}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 `;
 
 // ── THEME TOGGLE BUTTON HTML ──
@@ -178,13 +157,19 @@ const THEME_TOGGLE_SCRIPT = `
   var btn = document.getElementById('theme-toggle');
   var stored = localStorage.getItem('theme');
   if (stored) root.setAttribute('data-theme', stored);
-
+  function sync(){
+    var isDark = root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    btn.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.setAttribute('title', isDark ? 'Light theme' : 'Dark theme');
+    btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+  }
+  sync();
   btn.addEventListener('click', function(){
-    var isDark = root.getAttribute('data-theme') === 'dark' ||
-      (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches);
+    var isDark = root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme:dark)').matches);
     var next = isDark ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
+    sync();
   });
 })();
 <\/script>
@@ -290,7 +275,6 @@ function headTags(pageTitle, canonicalUrl) {
   <title>${esc(pageTitle)}</title>
   <link rel="icon" type="image/png" sizes="96x96" href="${SITE_URL}/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="48x48" href="${SITE_URL}/favicon-48x48.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/android-chrome-192x192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="${SITE_URL}/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="${SITE_URL}/android-chrome-192x192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="${SITE_URL}/android-chrome-512x512.png">
@@ -544,10 +528,11 @@ async function main() {
     if (related.length > 0) {
       const cards = related.map(g => `
         <a href="${g.url}" class="related-card" aria-label="Play ${esc(g.name)}">
-          <img src="${g.img}" alt="${esc(g.name)}" loading="lazy" width="200" height="200">
+          <div class="related-card__media"><img src="${g.img}" alt="${esc(g.name)}" loading="lazy" width="200" height="200"></div>
           <span class="related-card__name">${esc(g.name)}</span>
+          <span class="related-card__category">${esc(g.category)}</span>
         </a>`).join('');
-      relatedHtml = `<section class="related"><h2>More Games</h2><div class="related-grid">${cards}</div></section>`;
+      relatedHtml = `<section class="related"><h2>More games</h2><div class="related-grid">${cards}</div></section>`;
     }
 
     let html = fs.readFileSync(gamePage, 'utf8');
@@ -559,9 +544,15 @@ async function main() {
   console.log('\n🔨 Home Page');
   const cardsHtml = gamesData.map(g => `
     <a href="${g.url}" class="game-card" aria-label="Play ${esc(g.name)}">
-      <img src="${g.img}" alt="${esc(g.name)}" loading="lazy" width="400" height="400">
-      <span class="game-card__name">${esc(g.name)}</span>
+      <div class="game-card__media">
+        <img src="${g.img}" alt="${esc(g.name)}" loading="lazy" width="400" height="400">
+        <span class="game-card__shade"></span>
+        <span class="game-card__play" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      </div>
+      <div class="game-card__body"><span class="game-card__name">${esc(g.name)}</span><span class="game-card__category">${esc(g.category)}</span></div>
     </a>`).join('');
+  const categories = [...new Set(gamesData.map(g => g.category).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+  const categoryChips = ['All', ...categories].map((c, i) => `<button class="category-chip" type="button" data-category="${esc(c)}" aria-pressed="${i === 0 ? 'true' : 'false'}">${esc(c)}</button>`).join('');
 
   // Titolo OG: deve essere 30-60 caratteri
   const homeOgTitle = `${SITE_NAME} — ${SITE_TAGLINE} | Play Instantly`;
@@ -579,7 +570,10 @@ async function main() {
     .replace(/{{SITE_TAGLINE}}/g, esc(SITE_TAGLINE))
     .replace(/{{GAMES_COUNT}}/g,  String(gamesData.length))
     .replace(/{{GAMES_LIST}}/g,   cardsHtml)
-    .replace(/{{GAMES_JSON}}/g,   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img }))))
+    .replace(/{{CATEGORY_CHIPS}}/g, categoryChips)
+    .replace(/{{GITHUB_URL}}/g,    `https://github.com/${encodeURIComponent(ORG_NAME)}`)
+    .replace(/{{YEAR}}/g,          String(new Date().getFullYear()))
+    .replace(/{{GAMES_JSON}}/g,   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img, c: g.category, k: (g.keywords || []).join(' ') }))))
     .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
     .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
 
@@ -633,11 +627,11 @@ async function main() {
   </style>
 </head>
 <body>
-  <header>
+  <header class="site-header"><div class="header-inner">
     <a href="/" class="logo"><img src="/favicon-32x32.png" alt="">${SITE_NAME}</a>
     <span class="spacer"></span>
     ${THEME_TOGGLE_HTML}
-  </header>
+  </div></header>
   <main class="e"><h1>404</h1><p>This page doesn't exist.</p><a href="/">Back to Home</a></main>
   ${THEME_TOGGLE_SCRIPT}
 </body>
@@ -692,7 +686,7 @@ ${gamesData.map(g => `  <url>
   // 7. Service Worker (stale-while-revalidate + offline navigation fallback)
   console.log('⚙️  Service Worker');
   fs.writeFileSync(path.join(OUTPUT_DIR, 'service-worker.js'), `
-var CACHE='${SITE_NAME.toLowerCase().replace(/[^a-z0-9]/g,'-')}-v2';
+var CACHE='${SITE_NAME.toLowerCase().replace(/[^a-z0-9]/g,'-')}-v3';
 var PRECACHE=['/','/index.html','/404.html','/favicon-96x96.png','/favicon-48x48.png','/android-chrome-192x192.png','/android-chrome-512x512.png','/manifest.json'];
 
 self.addEventListener('install',function(e){
