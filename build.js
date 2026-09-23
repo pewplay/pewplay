@@ -273,6 +273,7 @@ function headTags(pageTitle, canonicalUrl) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${esc(pageTitle)}</title>
+  <link rel="icon" href="${SITE_URL}/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="96x96" href="${SITE_URL}/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="48x48" href="${SITE_URL}/favicon-48x48.png">
   <link rel="apple-touch-icon" sizes="180x180" href="${SITE_URL}/apple-touch-icon.png">
@@ -639,8 +640,9 @@ async function main() {
 
   // Icone — copia tutte le varianti (devono essere già ridimensionate correttamente)
   const iconFiles = [
-    'favicon-48x48.png', 'favicon-96x96.png',
+    'favicon.ico',
     'favicon-16x16.png', 'favicon-32x32.png',
+    'favicon-48x48.png', 'favicon-96x96.png',
     'apple-touch-icon.png',
     'android-chrome-192x192.png', 'android-chrome-512x512.png',
     'icon-maskable-192.png', 'icon-maskable-512.png',
