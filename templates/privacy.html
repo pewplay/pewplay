@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+  {{HEAD_TAGS}}
+  {{SEO_TAGS}}
+  <style>
+    {{STYLES}}
+    .policy-wrap{max-width:900px;margin:0 auto;padding:108px 20px 72px}
+    .policy-hero{margin-bottom:32px;padding-bottom:26px;border-bottom:1px solid var(--border)}
+    .policy-kicker{color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+    .policy-hero h1{font-size:clamp(34px,6vw,52px);line-height:1.04;letter-spacing:-1.6px;margin-bottom:12px}
+    .policy-meta{color:var(--text-3);font-size:13px}
+    .policy-card{background:var(--surface-elevated);border:1px solid var(--border);border-radius:20px;padding:clamp(20px,4vw,34px);box-shadow:var(--shadow-sm)}
+    .policy-card h2{font-size:21px;letter-spacing:-.35px;margin:32px 0 10px}.policy-card h2:first-child{margin-top:0}
+    .policy-card h3{font-size:16px;margin:20px 0 8px}
+    .policy-card p,.policy-card li{color:var(--text-2);font-size:15px;line-height:1.72}
+    .policy-card p+p{margin-top:10px}.policy-card ul{padding-left:22px;margin:10px 0}.policy-card li+li{margin-top:6px}
+    .policy-card a{color:var(--accent);font-weight:650;text-underline-offset:3px}.policy-card code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:1px 5px;color:var(--text)}
+    .notice{margin:18px 0;padding:15px 16px;border:1px solid var(--border);border-radius:14px;background:var(--accent-soft);color:var(--text-2);font-size:14px;line-height:1.6}
+    .policy-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-top:26px;color:var(--text-3);font-size:12px}.policy-footer a{color:var(--text-2);text-decoration:none;font-weight:650}.policy-footer a:hover{color:var(--accent)}
+    @media(max-width:520px){.policy-wrap{padding:88px 14px 52px}.policy-card{border-radius:17px}.policy-card p,.policy-card li{font-size:14px}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="logo" aria-label="{{SITE_NAME}} home"><img src="/favicon-32x32.png" alt="" width="32" height="32"><span>{{SITE_NAME}}</span></a>
+      <span class="spacer"></span>{{THEME_TOGGLE}}
+    </div>
+  </header>
+
+  <main class="policy-wrap">
+    <div class="policy-hero">
+      <div class="policy-kicker">Legal & privacy</div>
+      <h1>Privacy &amp; Cookie Policy</h1>
+      <p class="policy-meta">Last updated: {{UPDATED_DATE}}</p>
+    </div>
+
+    <article class="policy-card">
+      <h2>1. Who we are</h2>
+      <p>This Privacy &amp; Cookie Policy explains how {{SITE_NAME}} handles information when you visit and use this website.</p>
+      <p><strong>Controller / site operator:</strong> {{CONTROLLER_NAME}}{{CONTROLLER_ADDRESS}}<br><strong>Privacy contact:</strong> <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a></p>
+
+      <h2>2. Information processed when you use the site</h2>
+      <p>The website can process technical information needed to deliver pages and protect the service, such as IP address, browser and device information, requested URLs, timestamps and security/network logs. Hosting, CDN and security providers may process this information on our behalf as part of operating the website.</p>
+      <p>We do not require an account to play games on {{SITE_NAME}} and we do not ask you to provide profile information simply to access the games.</p>
+
+      <h2>3. Google Analytics</h2>
+      {{ANALYTICS_SECTION}}
+      <p>Analytics is used to measure site usage and improve content and performance. Where consent is legally required, analytics storage is intended to follow the consent choices collected through the configured Google consent management solution.</p>
+      <p>Google explains how Analytics collects and protects data in its <a href="https://support.google.com/analytics/answer/6004245" rel="noopener noreferrer">Analytics data safeguards information</a> and describes GA4 cookies in its <a href="https://support.google.com/analytics/answer/11397207" rel="noopener noreferrer">GA4 cookie documentation</a>.</p>
+
+      <h2>4. Google AdSense and advertising</h2>
+      <p>{{SITE_NAME}} uses Google AdSense to display advertising. Google and its advertising technology partners may use cookies, local storage, device information and other identifiers to deliver, measure, secure and, where permitted by your choices, personalize advertising.</p>
+      <p>The specific advertising vendors and purposes available to you can vary according to the Google AdSense configuration. Where the Google consent message is shown, its controls provide the current vendor/purpose information and allow you to make the choices offered there.</p>
+      <p>For more information about how Google uses information from sites and apps that use its services, see <a href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer">How Google uses information from sites or apps that use our services</a> and the <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Google Privacy Policy</a>.</p>
+
+      <h2>5. Cookies, local storage and consent</h2>
+      <p>Cookies and similar technologies can be used for essential site operation, analytics and advertising. For visitors in regions where consent is required, {{SITE_NAME}} relies on the consent solution configured through Google AdSense Privacy &amp; messaging rather than a separate custom cookie banner.</p>
+      <p>Your available choices may include accepting, rejecting or managing purposes and vendors. Google’s consent solution may also communicate consent signals to Google Analytics and advertising products when those settings are enabled by the site operator.</p>
+      <div class="notice">Browser settings can also let you delete or block cookies, but doing so may affect some site or advertising functionality. Consent choices made through the Google message are separate from browser-level controls.</div>
+
+      <h2>6. Purposes and legal bases</h2>
+      <p>Depending on the feature and your location, personal data may be processed for the following purposes and legal bases:</p>
+      <ul>
+        <li><strong>Site delivery and security:</strong> to provide requested pages, prevent abuse and maintain technical reliability; generally based on providing the service and/or legitimate interests in operating and securing the website.</li>
+        <li><strong>Analytics:</strong> to understand website usage and improve the service; where required, based on your consent.</li>
+        <li><strong>Advertising and ad personalization:</strong> to fund the service, display and measure ads and, when permitted, personalize ads; consent is requested where required by applicable law and Google’s policies.</li>
+        <li><strong>Legal compliance:</strong> where processing is necessary to comply with applicable legal obligations.</li>
+      </ul>
+
+      <h2>7. Recipients and international transfers</h2>
+      <p>Information may be processed by service providers involved in hosting/CDN/security and by Google in connection with AdSense and, when enabled, Google Analytics. These providers may process information in countries other than your own. Where required, transfers are subject to the safeguards made available by the relevant provider and applicable data-protection law.</p>
+
+      <h2>8. Data retention</h2>
+      <p>Technical logs are retained only for as long as needed for security, troubleshooting and service operation, subject to the practices of the hosting/security providers. Google Analytics and advertising data are retained according to the settings selected for those products and Google’s applicable policies. Retention periods may therefore differ by data category and service.</p>
+
+      <h2>9. Your privacy rights</h2>
+      <p>Depending on where you live, you may have rights over your personal data. Under the GDPR, these can include access, rectification, erasure, restriction, objection, data portability and withdrawal of consent. You may also have the right to lodge a complaint with your competent data-protection authority.</p>
+      <p>To make a privacy request concerning data controlled directly by {{SITE_NAME}}, contact <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>. For data controlled independently by Google or another provider, you may also need to use that provider’s privacy controls.</p>
+
+      <h2>10. Changes to this policy</h2>
+      <p>We may update this policy when the website, the services we use or legal requirements change. The date at the top of this page indicates the latest revision.</p>
+
+      <h2>11. Contact</h2>
+      <p>Privacy questions can be sent to <a href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a>.</p>
+    </article>
+
+    <div class="policy-footer"><span>© {{YEAR}} {{SITE_NAME}}</span><span><a href="/">Home</a> · <a href="mailto:{{CONTACT_EMAIL}}">Contact</a></span></div>
+  </main>
+  {{THEME_SCRIPT}}
+</body>
+</html>

@@ -157,3 +157,10 @@ Node.js ≥ 20. Runtime output is pure HTML/CSS/JS; build-time dependencies are 
 ## License
 
 MIT
+
+
+## Privacy & Cookie Policy
+
+The build generates `/privacy-policy/` and links it from the home page and game pages. The default contact address is `contact@pewplay.com`. You can override the controller/contact details with `PRIVACY_CONTACT_EMAIL`, `PRIVACY_CONTROLLER_NAME` and `PRIVACY_CONTROLLER_ADDRESS`.
+
+The page describes Google AdSense, Google Analytics (when `GA_MEASUREMENT_ID` is enabled), cookies/consent and data-subject rights. The Google consent banner itself remains managed from **AdSense → Privacy & messaging**. Because legal identity/address requirements depend on who actually operates the site, replace the controller details with the real legal person/company and review the policy for your jurisdiction before publishing.

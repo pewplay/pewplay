@@ -26,6 +26,9 @@ const THEME_COLOR  = '#6C5CE7';
 const ADSENSE_PUBLISHER_ID = (process.env.ADSENSE_PUBLISHER_ID || 'pub-6003231730369215').replace(/^ca-/, '');
 const ADSENSE_CLIENT_ID = `ca-${ADSENSE_PUBLISHER_ID}`;
 const GA_MEASUREMENT_ID = (process.env.GA_MEASUREMENT_ID || '').trim();
+const PRIVACY_CONTACT_EMAIL = (process.env.PRIVACY_CONTACT_EMAIL || 'contact@pewplay.com').trim();
+const PRIVACY_CONTROLLER_NAME = (process.env.PRIVACY_CONTROLLER_NAME || SITE_NAME).trim();
+const PRIVACY_CONTROLLER_ADDRESS = (process.env.PRIVACY_CONTROLLER_ADDRESS || '').trim();
 
 // ============================================================
 //  UTILITÀ
@@ -415,8 +418,9 @@ function absUrl(p) {
 async function main() {
   console.log(`\n--- BUILD ${SITE_NAME} (${SITE_URL}) ---\n`);
 
-  const gameTemplate  = fs.readFileSync(path.join(TEMPLATES_DIR, 'game.html'), 'utf8');
-  const indexTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf8');
+  const gameTemplate    = fs.readFileSync(path.join(TEMPLATES_DIR, 'game.html'), 'utf8');
+  const indexTemplate   = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf8');
+  const privacyTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'privacy.html'), 'utf8');
 
   if (!GH_TOKEN || !ORG_NAME) {
     console.error('ERRORE: Imposta GH_TOKEN e ORG_NAME come variabili d\'ambiente.');
@@ -521,6 +525,7 @@ async function main() {
           .replace(/{{KEYWORD_TAGS}}/g,    keywordTagsHtml)
           .replace(/{{RELATED_SECTION}}/g, '') // placeholder — populated after all games are processed
           .replace(/{{THEME_TOGGLE}}/g,    THEME_TOGGLE_HTML)
+          .replace(/{{CONTACT_EMAIL}}/g,    esc(PRIVACY_CONTACT_EMAIL))
           .replace(/{{THEME_SCRIPT}}/g,    THEME_TOGGLE_SCRIPT);
 
         fs.writeFileSync(origIndex, html);
@@ -601,9 +606,37 @@ async function main() {
     .replace(/{{YEAR}}/g,          String(new Date().getFullYear()))
     .replace(/{{GAMES_JSON}}/g,   JSON.stringify(gamesData.map(g => ({ n: g.name, u: g.url, i: g.img, c: g.category, k: (g.keywords || []).join(' ') }))))
     .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
+    .replace(/{{CONTACT_EMAIL}}/g, esc(PRIVACY_CONTACT_EMAIL))
     .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
 
   fs.writeFileSync(path.join(OUTPUT_DIR, 'index.html'), indexHtml);
+
+  // Privacy & Cookie Policy
+  const privacyDir = path.join(OUTPUT_DIR, 'privacy-policy');
+  fs.mkdirSync(privacyDir, { recursive: true });
+  const privacyUrl = SITE_URL + '/privacy-policy/';
+  const controllerAddressHtml = PRIVACY_CONTROLLER_ADDRESS
+    ? `<br><span>${esc(PRIVACY_CONTROLLER_ADDRESS)}</span>`
+    : '';
+  const analyticsSection = GA_MEASUREMENT_ID
+    ? `<p>We use Google Analytics 4 (GA4) to understand how visitors use ${esc(SITE_NAME)}, such as pages viewed, approximate location, device/browser information and interaction events. GA4 may use first-party cookies such as <code>_ga</code> when analytics storage is permitted. We do not intentionally send names, email addresses or other directly identifying information to Google Analytics.</p>`
+    : `<p>Google Analytics is not currently enabled in this build. If it is enabled later by setting a GA4 Measurement ID, this policy will apply to that measurement activity and consent will be handled through the configured Google consent solution where required.</p>`;
+
+  const privacyHtml = privacyTemplate
+    .replace(/{{LANG}}/g, SITE_LANG)
+    .replace(/{{HEAD_TAGS}}/g, headTags(`Privacy & Cookie Policy | ${SITE_NAME}`, privacyUrl))
+    .replace(/{{SEO_TAGS}}/g, seoTags(`Privacy & Cookie Policy | ${SITE_NAME}`, `Privacy and cookie information for ${SITE_NAME}.`, homeOg.url, privacyUrl, 'website', [], homeOg.size))
+    .replace(/{{STYLES}}/g, COMMON_STYLES)
+    .replace(/{{SITE_NAME}}/g, esc(SITE_NAME))
+    .replace(/{{CONTROLLER_NAME}}/g, esc(PRIVACY_CONTROLLER_NAME))
+    .replace(/{{CONTROLLER_ADDRESS}}/g, controllerAddressHtml)
+    .replace(/{{CONTACT_EMAIL}}/g, esc(PRIVACY_CONTACT_EMAIL))
+    .replace(/{{ANALYTICS_SECTION}}/g, analyticsSection)
+    .replace(/{{UPDATED_DATE}}/g, '23 September 2026')
+    .replace(/{{YEAR}}/g, String(new Date().getFullYear()))
+    .replace(/{{THEME_TOGGLE}}/g, THEME_TOGGLE_HTML)
+    .replace(/{{THEME_SCRIPT}}/g, THEME_TOGGLE_SCRIPT);
+  fs.writeFileSync(path.join(privacyDir, 'index.html'), privacyHtml);
 
   // 5. Assets statici
   console.log('✨ Assets');
@@ -708,6 +741,10 @@ async function main() {
     <loc>${SITE_URL}/</loc>
     <lastmod>${today}</lastmod>
   </url>
+  <url>
+    <loc>${SITE_URL}/privacy-policy/</loc>
+    <lastmod>${today}</lastmod>
+  </url>
 ${gamesData.map(g => `  <url>
     <loc>${SITE_URL}${g.url}</loc>
     <lastmod>${today}</lastmod>${sitemapImageTag(g)}
@@ -718,7 +755,7 @@ ${gamesData.map(g => `  <url>
   console.log('⚙️  Service Worker');
   fs.writeFileSync(path.join(OUTPUT_DIR, 'service-worker.js'), `
 var CACHE='${SITE_NAME.toLowerCase().replace(/[^a-z0-9]/g,'-')}-v3';
-var PRECACHE=['/','/index.html','/404.html','/favicon-96x96.png','/favicon-48x48.png','/android-chrome-192x192.png','/android-chrome-512x512.png','/manifest.json'];
+var PRECACHE=['/','/index.html','/privacy-policy/','/404.html','/favicon-96x96.png','/favicon-48x48.png','/android-chrome-192x192.png','/android-chrome-512x512.png','/manifest.json'];
 
 self.addEventListener('install',function(e){
   e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRECACHE)}));
