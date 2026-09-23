@@ -36,6 +36,21 @@ Only `ORG_NAME` and `GH_TOKEN` are required. Everything else has sensible defaul
 | `SITE_DESC`    | no       | `Play the best free online…` | Homepage meta description    |
 | `SITE_LANG`    | no       | `en`                         | HTML `lang` attribute        |
 | `CLONE_CONCURRENCY` | no | `5` | Max simultaneous Git clones |
+| `ADSENSE_PUBLISHER_ID` | no | `pub-6003231730369215` | AdSense publisher ID; also used for `ads.txt` |
+| `GA_MEASUREMENT_ID` | no | — | GA4 Measurement ID (`G-...`); Analytics is omitted when empty |
+
+## Google AdSense & Analytics
+
+The generated pages include the AdSense tag for publisher `pub-6003231730369215`, and the build writes `/ads.txt` automatically. No custom cookie/consent banner is included: configure Google's CMP from **AdSense → Privacy & messaging**.
+
+GA4 is controlled only by the `GA_MEASUREMENT_ID` environment variable. Example:
+
+```bash
+export GA_MEASUREMENT_ID=G-XXXXXXXXXX
+npm run build
+```
+
+If you use Google's AdSense CMP for European-regulation messages, enable its Consent Mode options for both advertising and analytics so the same CMP can pass the visitor's choices to Google Analytics.
 
 ## Adding a Game
 
@@ -82,6 +97,7 @@ dist/
 ├── 404.html            # error page
 ├── manifest.json       # PWA manifest
 ├── robots.txt          # sitemap reference
+├── ads.txt             # AdSense authorized seller declaration
 ├── sitemap.xml         # with image support
 ├── service-worker.js   # offline support (stale-while-revalidate)
 ├── og-image.png        # homepage social image

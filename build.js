@@ -21,6 +21,12 @@ const SITE_DESC    = process.env.SITE_DESC    || 'Play the best free online game
 const SITE_LANG    = process.env.SITE_LANG    || 'en';
 const THEME_COLOR  = '#6C5CE7';
 
+// Google AdSense / Analytics.
+// AdSense uses the publisher ID below; GA4 is enabled only when GA_MEASUREMENT_ID is set.
+const ADSENSE_PUBLISHER_ID = (process.env.ADSENSE_PUBLISHER_ID || 'pub-6003231730369215').replace(/^ca-/, '');
+const ADSENSE_CLIENT_ID = `ca-${ADSENSE_PUBLISHER_ID}`;
+const GA_MEASUREMENT_ID = (process.env.GA_MEASUREMENT_ID || '').trim();
+
 // ============================================================
 //  UTILITÀ
 // ============================================================
@@ -267,6 +273,24 @@ function getHomeOgImage(outputDir, pendingDownloads) {
   return { url: '/og-image.png', size: { w: 1200, h: 630 } };
 }
 
+// ── GOOGLE ADSENSE / ANALYTICS ────────────────────────────
+// Consent UI is intentionally NOT implemented here.
+// Configure Google's CMP/banner from AdSense > Privacy & messaging.
+function googleTags() {
+  const gaTag = GA_MEASUREMENT_ID ? `
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${esc(GA_MEASUREMENT_ID)}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', ${JSON.stringify(GA_MEASUREMENT_ID)});
+  </script>` : '';
+
+  return `
+  <meta name="google-adsense-account" content="${ADSENSE_CLIENT_ID}">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}" crossorigin="anonymous"></script>${gaTag}`;
+}
+
 // ── HTML HEAD GENERATORS ──────────────────────────────────
 function headTags(pageTitle, canonicalUrl) {
   return `
@@ -283,6 +307,7 @@ function headTags(pageTitle, canonicalUrl) {
   <meta name="theme-color" content="${THEME_COLOR}">
   <meta name="robots" content="index,follow">
   ${canonicalUrl ? `<link rel="canonical" href="${canonicalUrl}">` : ''}
+  ${googleTags()}
   <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js'))}</script>
   `;
 }
@@ -612,6 +637,10 @@ async function main() {
   // Robots — solo sitemap
   fs.writeFileSync(path.join(OUTPUT_DIR, 'robots.txt'),
     `Sitemap: ${SITE_URL}/sitemap.xml`);
+
+  // AdSense authorized seller declaration (site root).
+  fs.writeFileSync(path.join(OUTPUT_DIR, 'ads.txt'),
+    `google.com, ${ADSENSE_PUBLISHER_ID}, DIRECT, f08c47fec0942fa0\n`);
 
   // 404
   fs.writeFileSync(path.join(OUTPUT_DIR, '404.html'), `<!DOCTYPE html>
