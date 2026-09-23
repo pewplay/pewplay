@@ -670,11 +670,8 @@ async function main() {
   // Robots — consenti la scansione e indica la sitemap
   fs.writeFileSync(
     path.join(OUTPUT_DIR, 'robots.txt'),
-    `User-agent: *
-  Allow: /
-
-  Sitemap: ${SITE_URL}/sitemap.xml
-  `
+    'User-agent: *\nAllow: /\n\nSitemap: ' + SITE_URL + '/sitemap.xml\n',
+    'utf8'
   );
 
   // AdSense authorized seller declaration (site root).
