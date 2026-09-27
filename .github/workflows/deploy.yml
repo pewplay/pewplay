@@ -100,17 +100,17 @@ jobs:
       group: deploy-${{ matrix.target }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ matrix.ref }}         # codice del sito: main per il pubblico, preview per l'anteprima
           persist-credentials: false     # la build usa il suo token: evita credenziali doppie
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
       - name: Cache dipendenze npm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
@@ -120,7 +120,7 @@ jobs:
 
       # I giochi scaricati restano in cache: vengono riscaricati solo quelli con nuovi commit
       - name: Cache giochi
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .cache/${{ matrix.target }}
           key: games-${{ matrix.target }}-${{ github.run_id }}
