@@ -95,11 +95,11 @@ export function renderGame(site, game, related) {
       </div>
       <div class="rotate-hint">${esc(T.rotate)}</div>
     </div>
-    <div class="game-bar">
-      <span class="game-bar__title">${esc(name)}</span><span class="game-bar__cat">${esc(game.category)}</span>
-      <a class="game-bar__more" href="#game-info">${esc(T.moreInfo)}${ICONS.down}</a>
-    </div>
   </section>
+  <div class="game-bar" id="game-bar">
+    <span class="game-bar__title">${esc(name)}</span><span class="game-bar__cat">${esc(game.category)}</span>
+    <a class="game-bar__more" id="bar-toggle" href="#game-info" data-down="${esc(T.moreInfo)}" data-up="${esc(T.backToGame)}"><span>${esc(T.moreInfo)}</span>${ICONS.down}</a>
+  </div>
   <main id="main" class="main--flush">
     ${site.isPreview ? `<div class="preview-bar" role="note">${esc(T.previewNotice)} · ${esc(game.ref)}@${esc(game.sha.slice(0, 7))}${game.draft ? ` · ${esc(T.badgeDraft)}` : ''}</div>` : ''}
     <div class="game-page">

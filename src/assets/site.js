@@ -82,6 +82,7 @@
       frame.setAttribute('allowfullscreen', '');
       frame.addEventListener('load', function () {
         facade.classList.add('is-hidden');
+        embedRules(frame);
         try { frame.focus(); } catch (e) {}
       });
       frame.src = container.getAttribute('data-src');
@@ -92,6 +93,67 @@
     playBtn.addEventListener('click', start);
     // Link diretto con #play: parte subito
     if (location.hash === '#play') start();
+  }
+
+  // Regole comuni a tutti i giochi, applicate solo dentro PewPlay (il repo del gioco resta intatto):
+  // swipe e rotella dentro il gioco non fanno mai scorrere la pagina del sito. Se il gioco ha una
+  // sua parte scorrevole (un elenco, un testo lungo), quella continua a scorrere normalmente.
+  function embedRules(f) {
+    var doc, win;
+    try { doc = f.contentDocument; win = f.contentWindow; } catch (e) { return; }
+    if (!doc || !doc.head || doc.getElementById('pewplay-embed')) return;
+    var st = doc.createElement('style');
+    st.id = 'pewplay-embed';
+    st.textContent = 'html,body{overscroll-behavior:none}canvas{touch-action:none}';
+    doc.head.appendChild(st);
+
+    // true se un elemento sotto il puntatore può ancora scorrere nella direzione dy (>0 = giù)
+    var canScroll = function (el, dy) {
+      for (; el && el.nodeType === 1; el = el.parentElement) {
+        var root = el === doc.scrollingElement || el === doc.body;
+        if (!root && !/(auto|scroll)/.test(win.getComputedStyle(el).overflowY)) continue;
+        if (el.scrollHeight <= el.clientHeight + 1) continue;
+        if (dy > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0) return true;
+      }
+      return false;
+    };
+    doc.addEventListener('wheel', function (e) {
+      if (e.ctrlKey || !e.deltaY) return; // ctrl+rotella = zoom
+      if (!canScroll(e.target, e.deltaY)) e.preventDefault();
+    }, { passive: false });
+    var sx = 0, sy = 0;
+    doc.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }
+    }, { passive: true });
+    doc.addEventListener('touchmove', function (e) {
+      if (e.touches.length !== 1 || !e.cancelable) return; // due dita = zoom
+      var dx = sx - e.touches[0].clientX, dy = sy - e.touches[0].clientY;
+      if (Math.abs(dy) < Math.abs(dx)) return;
+      if (!canScroll(e.target, dy)) e.preventDefault();
+    }, { passive: false });
+  }
+
+  // ── Barra sotto il gioco: scende alle informazioni e risale al gioco ──
+  var barToggle = $('bar-toggle');
+  if (barToggle && container) {
+    var label = barToggle.querySelector('span');
+    var isDown = function () { return window.scrollY > container.offsetHeight / 3; };
+    var syncBar = function () {
+      var down = isDown();
+      barToggle.classList.toggle('is-up', down);
+      label.textContent = barToggle.getAttribute(down ? 'data-up' : 'data-down');
+    };
+    barToggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (isDown()) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (frame) setTimeout(function () { try { frame.focus({ preventScroll: true }); } catch (err) {} }, 350);
+      } else {
+        $('game-info').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+    window.addEventListener('scroll', syncBar, { passive: true });
+    syncBar();
   }
 
   // ── Schermo intero ──
