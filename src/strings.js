@@ -44,6 +44,7 @@ export const T = {
   coverAlt: name => `${name} game cover`,
   cardAlt: name => `${name} game`,
   moreGames: 'More games',
+  moreInfo: 'Game info & more games',
   otherCategories: 'Other categories',
   moreIn: cat => `More ${cat.toLowerCase()} games`,
   allDevices: 'Desktop · Tablet · Mobile',

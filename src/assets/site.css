@@ -139,11 +139,21 @@ main{margin-top:var(--header-h)}
 
 /* ── Pagina gioco ── */
 .game-shell .header-inner{max-width:none}
-.game-shell{position:relative;width:100%;padding-top:var(--header-h);background:var(--bg)}
+.game-shell{--bar-h:46px;position:relative;width:100%;padding-top:var(--header-h);background:var(--bg)}
 .game-shell:fullscreen,.game-shell:-webkit-full-screen{width:100vw;height:100vh;height:100dvh;padding-top:48px;overflow:hidden;--header-h:48px}
 .game-shell:fullscreen .site-header,.game-shell:-webkit-full-screen .site-header{position:absolute;height:48px}
 .game-shell:fullscreen .game-container,.game-shell:-webkit-full-screen .game-container{height:calc(100dvh - 48px)}
-.game-container{position:relative;width:100%;height:calc(100vh - var(--header-h));height:calc(100dvh - var(--header-h));min-height:320px;overflow:hidden;background:#07070b}
+.game-container{position:relative;width:100%;height:calc(100vh - var(--header-h) - var(--bar-h));height:calc(100dvh - var(--header-h) - var(--bar-h));min-height:320px;overflow:hidden;background:#07070b}
+.game-bar{height:var(--bar-h);display:flex;align-items:center;gap:10px;padding:0 20px;background:var(--surface-elevated);border-bottom:1px solid var(--border);color:var(--text)}
+.game-bar__title{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.game-bar__cat{font-size:12px;font-weight:700;color:var(--text-3);white-space:nowrap}
+.game-bar__more{margin-left:auto;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;padding:7px 12px;border:1px solid var(--border);border-radius:999px;color:var(--text-2);font-size:12px;font-weight:800;text-decoration:none;transition:color .18s,border-color .18s}
+.game-bar__more:hover,.game-bar__more:focus-visible{color:var(--text);border-color:var(--accent,#6C5CE7)}
+.game-bar__more svg{width:14px;height:14px}
+.game-shell:fullscreen .game-bar,.game-shell:-webkit-full-screen .game-bar{display:none}
+.game-shell:fullscreen,.game-shell:-webkit-full-screen{--bar-h:0px}
+#game-info{scroll-margin-top:calc(var(--header-h) + 16px)}
+@media(max-width:520px){.game-bar{padding:0 14px}.game-bar__cat{display:none}}
 .game-container iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#07070b}
 .facade{position:absolute;inset:0;z-index:2;display:grid;place-items:center;color:#fff;background:#07070b;transition:opacity .35s,visibility .35s}
 .facade.is-hidden{opacity:0;visibility:hidden;pointer-events:none}

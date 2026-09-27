@@ -14,6 +14,7 @@ export const ICONS = {
   share: svg('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>'),
   help: svg('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>'),
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+  down: svg('<path d="M12 5v14M5 12l7 7 7-7"/>'),
   arrow: svg('<path d="M5 12h14M13 5l7 7-7 7"/>'),
   devices: svg('<rect x="2" y="4" width="14" height="10" rx="1.5"/><path d="M6 18h6M9 14v4"/><rect x="17" y="8" width="5" height="11" rx="1"/>'),
   search: svg('<circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/>', ' stroke-width="2.3"'),

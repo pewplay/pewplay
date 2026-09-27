@@ -95,12 +95,16 @@ export function renderGame(site, game, related) {
       </div>
       <div class="rotate-hint">${esc(T.rotate)}</div>
     </div>
+    <div class="game-bar">
+      <span class="game-bar__title">${esc(name)}</span><span class="game-bar__cat">${esc(game.category)}</span>
+      <a class="game-bar__more" href="#game-info">${esc(T.moreInfo)}${ICONS.down}</a>
+    </div>
   </section>
   <main id="main" class="main--flush">
     ${site.isPreview ? `<div class="preview-bar" role="note">${esc(T.previewNotice)} · ${esc(game.ref)}@${esc(game.sha.slice(0, 7))}${game.draft ? ` · ${esc(T.badgeDraft)}` : ''}</div>` : ''}
     <div class="game-page">
       ${breadcrumb(crumbs)}
-      <article class="game-info-card">
+      <article class="game-info-card" id="game-info">
         <div class="game-info__head">
           ${picture(game.images.preview, { alt: T.cardAlt(name), sizes: '76px', width: 512, height: 512, className: 'game-info__icon' })}
           <div class="game-info"><h1>${esc(name)}</h1><div class="game-meta">${tags}</div></div>
