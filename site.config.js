@@ -8,8 +8,8 @@
 export default {
   // Nome e indirizzi
   name: 'PewPlay',
-  url: 'https://pewplaytest.pages.dev',                // sito pubblico (branch main)
-  previewUrl: 'https://preview.pewplaytest.pages.dev', // sito di anteprima (branch preview)
+  url: 'https://pewplay.pages.dev',                // sito pubblico (branch main)
+  previewUrl: 'https://preview.pewplay.pages.dev', // sito di anteprima (branch preview)
   themeColor: '#6C5CE7',
   contactEmail: 'contact@pewplay.com',
 
@@ -26,7 +26,7 @@ export default {
 
   // Cloudflare Pages
   cloudflare: {
-    pagesProject: 'pewplaytest',    // nome del progetto Pages
+    pagesProject: 'pewplay',    // nome del progetto Pages
   },
 
   // Pubblicità e statistiche (attive SOLO sul sito pubblico, mai in preview)
