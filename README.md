@@ -132,8 +132,8 @@ Tutti i campi sono facoltativi (tranne che serve un `title` sensato). Il riferim
 | `faq` | domande e risposte (anche come dati strutturati FAQPage) |
 | `category`, `tags` | pagina di categoria, breadcrumb, ricerca |
 | `author`, `playMode`, `orientation` | dettagli della scheda |
-| `cover`, `screenshots` | copertina 16:9 e galleria (default: `cover.png` e cartella `screenshots/`) |
-| `featured`, `added`, `draft`, `exclude` | in evidenza, badge "New", bozza, file da non pubblicare |
+| `cover`, `screenshots` | copertina 16:9 (schermata "Play now" e immagine dei link condivisi) e galleria (default: `cover.png` e cartella `screenshots/`) |
+| `featured`, `added`, `draft`, `exclude` | primo nella lista, badge "New", bozza, file da non pubblicare |
 
 ### Immagini
 Il sito crea da solo tutte le versioni ottimizzate (AVIF + WebP, più dimensioni):
@@ -141,13 +141,13 @@ Il sito crea da solo tutte le versioni ottimizzate (AVIF + WebP, più dimensioni
 | File del gioco | Diventa | Se manca |
 |---|---|---|
 | `preview.png` quadrata | card 256/512 px | segnaposto con il titolo |
-| `cover.png` 16:9 | schermata "Play now", "Featured games" 640/1280 px | generata dalla preview |
+| `cover.png` 16:9 | schermata "Play now" e sfondo dell'immagine condivisa, 640/1280 px | generata dalla preview |
 | `screenshots/*.png` | galleria con miniature e visualizzatore | sezione nascosta |
 | `og.png` 1200×630 | immagine dei link condivisi | **generata**: copertina sfocata + icona + categoria + titolo + logo |
 
 ## Pagine e SEO
 
-- **Home**: in evidenza, nuovi, una riga per categoria, tutti i giochi con ricerca e filtri (le sezioni si nascondono mentre cerchi).
+- **Home**: ricerca, filtri per categoria e griglia di tutti i giochi.
 - **Pagine di categoria** `/<categoria>-games/` (es. `/puzzle-games/`): introduzione, tutti i giochi della categoria, link alle altre. I testi introduttivi sono in `src/strings.js` → `CATEGORY_INFO`.
 - **Pagina gioco**: il gioco si carica solo al clic su "Play now" (pagina molto più veloce); pulsanti Aiuto, Condividi, Tema, Schermo intero; breadcrumb; sezioni da `game.json`; giochi correlati. Un link che finisce con `#play` avvia subito il gioco.
 - **404** con ricerca e giochi suggeriti.

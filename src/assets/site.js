@@ -28,13 +28,11 @@
     var chips = [].slice.call(document.querySelectorAll('.category-chip'));
     var count = $('result-count');
     var empty = $('no-results');
-    var sections = $('home-sections');
     var active = 'all';
     var fmt = count ? JSON.parse(count.getAttribute('data-format')) : null;
 
     function render() {
       var q = search.value.trim().toLowerCase();
-      var filtering = !!q || active !== 'all';
       var shown = 0;
       cards.forEach(function (card) {
         var okCat = active === 'all' || card.getAttribute('data-category') === active;
@@ -42,8 +40,6 @@
         card.hidden = !(okCat && okText);
         if (!card.hidden) shown++;
       });
-      // Mentre si cerca o filtra, le sezioni (in evidenza, categorie…) si nascondono: i risultati salgono in alto
-      if (sections) sections.hidden = filtering;
       if (count && fmt) count.textContent = shown + ' ' + (shown === 1 ? fmt[0] : fmt[1]);
       if (empty) empty.hidden = shown !== 0;
     }
