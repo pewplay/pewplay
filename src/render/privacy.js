@@ -1,7 +1,8 @@
 // Privacy & Cookie Policy + pagina 404.
 import { esc } from '../util.js';
 import { T } from '../strings.js';
-import { layout, header, footer } from './layout.js';
+import { layout, header, footer, ICONS } from './layout.js';
+import { gameCard } from './home.js';
 
 const L = (href, text) => `<a href="${href}" rel="noopener noreferrer">${text}</a>`;
 
@@ -62,7 +63,7 @@ export function renderPrivacy(site) {
   const page = content(v);
   const body = `
   ${header(site)}
-  <main class="policy-wrap">
+  <main id="main" class="policy-wrap">
     <div class="policy-hero">
       <div class="policy-kicker">${page.kicker}</div>
       <h1>${page.h1}</h1>
@@ -80,11 +81,22 @@ export function renderPrivacy(site) {
   });
 }
 
-export function renderNotFound(site) {
+export function renderNotFound(site, suggestions = []) {
   const s = T;
   const body = `
   ${header(site)}
-  <main class="e404"><h1>404</h1><p>${esc(s.notFoundText)}</p><a class="btn" href="/">${esc(s.backHome)}</a></main>`;
+  <main id="main" class="e404">
+    <p class="e404__code">404</p>
+    <h1>${esc(s.notFoundTitle)}</h1>
+    <p>${esc(s.notFoundText)}</p>
+    <form class="search-box e404__search" role="search" action="/" method="get">
+      ${ICONS.search.replace('<svg', '<svg class="search-icon"')}
+      <input type="search" name="q" placeholder="${esc(s.searchPlaceholder)}" aria-label="${esc(s.notFoundSearch)}" autocomplete="off">
+    </form>
+    <a class="btn" href="/">${esc(s.backHome)}</a>
+    ${suggestions.length ? `<section class="e404__games" aria-labelledby="try-h"><h2 id="try-h">${esc(s.tryThese)}</h2><div class="grid grid--related">${suggestions.map(g => gameCard(g, { sizes: '(min-width:900px) 150px, 30vw' })).join('')}</div></section>` : ''}
+  </main>
+  ${footer(site)}`;
   return layout(site, {
     path: '/404.html',
     noCanonical: true,

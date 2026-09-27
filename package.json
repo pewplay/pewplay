@@ -12,10 +12,12 @@
     "check": "node src/check-game.js",
     "deploy": "npm run build && node src/deploy.js --target production",
     "deploy:preview": "npm run build:preview && node src/deploy.js --target preview",
-    "deploy:check": "node src/deploy.js --check"
+    "deploy:check": "node src/deploy.js --check",
+    "prepare-previews": "node tools/prepare-preview-branches.js"
   },
   "dependencies": {
-    "sharp": "^0.34.0"
+    "sharp": "^0.34.0",
+    "@fontsource-variable/outfit": "^5.1.0"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

@@ -26,9 +26,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadOptions, ROOT } from './config.js';
 import { localGames, githubGames } from './sources.js';
-import { readGameJson, validateGameJson, normalizeGame, DEFAULT_EXCLUDE } from './game-config.js';
+import { readGameJson, validateGameJson, normalizeGame, findSiteImages, DEFAULT_EXCLUDE } from './game-config.js';
 import { buildGameImages } from './images.js';
 import { renderHome } from './render/home.js';
+import { renderCategory, renderAllCategories } from './render/category.js';
+import { CATEGORIES, categorySlug, categoryInfo } from './strings.js';
 import { renderGame } from './render/game.js';
 import { renderPrivacy, renderNotFound } from './render/privacy.js';
 import * as files from './static-files.js';
@@ -37,7 +39,8 @@ import { copyFiltered, makeMatcher, writeFile, formatBytes, shortHash, stableRan
 
 const PAGES_MAX_FILES = 20000;             // limite Cloudflare Pages (piano gratuito)
 const PAGES_MAX_FILE_SIZE = 25 * 1024 * 1024;
-const RESERVED_SLUGS = new Set(['assets', 'privacy-policy', 'play', '404.html']);
+// Nomi che un repo di gioco non può avere: sono pagine del sito (comprese le pagine di categoria)
+const RESERVED_SLUGS = new Set(['assets', 'privacy-policy', 'categories', 'play', 'img', '404.html', ...CATEGORIES.map(categorySlug)]);
 
 /** Problema di un singolo gioco: il gioco viene saltato, la build continua. */
 class GameProblem extends Error {}
@@ -148,9 +151,13 @@ async function main() {
 
   // ── 3. Pagine ─────────────────────────────────────────────
   info('\n[3/5] Pagine');
+  // Font Outfit ospitato sul sito (niente richieste a Google Fonts)
+  const font = installFont(opt.outDir);
+  site.fontPreload = font?.url || null;
   // CSS/JS con hash nel nome → cache "per sempre" nel browser
   for (const [kind, file] of [['css', 'site.css'], ['js', 'site.js']]) {
-    const content = fs.readFileSync(path.join(ROOT, 'src/assets', file), 'utf8');
+    let content = fs.readFileSync(path.join(ROOT, 'src/assets', file), 'utf8');
+    if (kind === 'css' && font) content = font.css + content;
     const name = `/assets/site.${shortHash(content)}.${kind}`;
     writeFile(path.join(opt.outDir, name), content);
     (site.assets ||= {})[kind] = name;
@@ -163,13 +170,40 @@ async function main() {
     if (!fs.existsSync(path.join(opt.outDir, needed))) warn(`public/${needed} mancante`, 'il sito funziona, ma l\'icona o l\'immagine social non verrà mostrata');
   }
 
+  // Categorie: una pagina per ognuna (/puzzle-games/ …), ordinate per numero di giochi.
+  // Raggruppate per indirizzo: due nomi che darebbero la stessa pagina diventano una categoria sola.
+  const bySlug = new Map(games.map(g => [g.slug, g]));
+  const groups = new Map();
+  for (const g of games) {
+    const slug = categorySlug(g.category);
+    if (!groups.has(slug)) groups.set(slug, { name: g.category, slug, ...categoryInfo(g.category), games: [] });
+    const group = groups.get(slug);
+    if (group.name !== g.category) {
+      warn(`${g.slug}: categoria "${g.category}" unita a "${group.name}"`, `hanno lo stesso indirizzo /${slug}/, scrivi "category": "${group.name}"`);
+      g.category = group.name;
+    }
+    group.games.push(g);
+  }
+  site.categories = [...groups.values()]
+    .filter(c => {
+      if (!bySlug.has(c.slug)) return true;
+      warn(`Pagina categoria ${c.name} non creata`, `esiste già un gioco chiamato "${c.slug}"`);
+      return false;
+    })
+    .sort((a, b) => b.games.length - a.games.length || a.name.localeCompare(b.name));
+  for (const g of games) g.categoryPage = site.categories.find(c => c.name === g.category) || null;
+
   writeFile(path.join(opt.outDir, 'index.html'), renderHome(site, games));
   writeFile(path.join(opt.outDir, 'privacy-policy', 'index.html'), renderPrivacy(site));
+  for (const cat of site.categories) {
+    writeFile(path.join(opt.outDir, cat.slug, 'index.html'), renderCategory(site, cat));
+  }
+  if (site.categories.length) writeFile(path.join(opt.outDir, 'categories', 'index.html'), renderAllCategories(site));
   for (const game of games) {
     writeFile(path.join(opt.outDir, game.slug, 'index.html'), renderGame(site, game, relatedFor(game, games, config.build.relatedGames)));
   }
-  writeFile(path.join(opt.outDir, '404.html'), renderNotFound(site));
-  info(`   home, privacy, 404 + ${games.length} pagin${games.length === 1 ? 'a' : 'e'} gioco`);
+  writeFile(path.join(opt.outDir, '404.html'), renderNotFound(site, games.slice(0, 6)));
+  info(`   home, privacy, 404, elenco categorie, ${site.categories.length} pagin${site.categories.length === 1 ? 'a' : 'e'} categoria + ${games.length} pagin${games.length === 1 ? 'a' : 'e'} gioco`);
 
   // ── 4. File di servizio ──────────────────────────────────
   info('\n[4/5] Sitemap, robots, manifest, header Cloudflare');
@@ -178,6 +212,8 @@ async function main() {
   writeFile(path.join(opt.outDir, '_headers'), files.headersFile(site));
   if (!site.isPreview) {
     writeFile(path.join(opt.outDir, 'sitemap.xml'), files.sitemapXml(site, games));
+    // IndexNow (Bing, Yandex…): file di verifica della chiave; l'invio degli URL lo fa deploy.js
+    writeFile(path.join(opt.outDir, `${files.indexNowKey(site)}.txt`), files.indexNowKey(site));
     writeFile(path.join(opt.outDir, 'service-worker.js'), files.serviceWorkerRemovalJs());
     const ads = files.adsTxt(site);
     if (ads) writeFile(path.join(opt.outDir, 'ads.txt'), ads);
@@ -194,6 +230,8 @@ async function main() {
     buildId: site.buildId,
     builtAt: new Date().toISOString(),
     games: gamesInfo,
+    indexNowKey: site.isPreview ? null : files.indexNowKey(site),
+    urls: site.isPreview ? [] : files.siteUrls(site, games),
   }, null, 2));
 
   const totalFiles = walkFiles(opt.outDir).length;
@@ -247,8 +285,19 @@ async function prepareGame(src, row, site, opt) {
   }
 
   // Immagini: un file mancante o corrotto non blocca il gioco (si usa un'alternativa, con avviso)
-  const img = await buildGameImages({ srcDir: src.dir, outDir: outGame, title: data.title, siteName: site.config.name, accent: site.config.themeColor });
+  const found = findSiteImages(src.dir, data);
+  for (const m of found.missing) row.notes.push(`"${m}" indicato in game.json non esiste: ignorato`);
+  const img = await buildGameImages({
+    srcDir: src.dir, outDir: outGame, title: data.title, category: data.category,
+    siteName: site.config.name, accent: site.config.themeColor, logoPath: path.join(ROOT, 'public', 'favicon-96x96.png'),
+    coverFile: found.cover, screenshots: found.screenshots,
+  });
   row.notes.push(...img.notes);
+  const base = `/${src.slug}/img/`;
+  const urls = set => ({
+    webp: Object.fromEntries(Object.entries(set.webp).map(([w, f]) => [w, base + f])),
+    avif: Object.fromEntries(Object.entries(set.avif).map(([w, f]) => [w, base + f])),
+  });
 
   const addedMs = data.added ? Date.parse(data.added) : 0;
   return {
@@ -257,8 +306,32 @@ async function prepareGame(src, row, site, opt) {
     sha: src.sha,
     updatedAt: src.updatedAt,
     isNew: addedMs > 0 && Date.now() - addedMs < site.config.build.newGameDays * 86400000,
-    images: { preview: `/${src.slug}/preview.webp`, og: `/${src.slug}/og.jpg` },
+    images: {
+      preview: urls(img.preview),
+      cover: urls(img.cover),
+      generatedCover: img.generatedCover,
+      shots: img.shots.map(s => ({ full: base + s.full, thumb: base + s.thumb, width: s.width, height: s.height })),
+      og: `/${src.slug}/og.jpg`,
+    },
   };
+}
+
+/**
+ * Copia il font Outfit (pacchetto npm @fontsource-variable/outfit) in dist/assets/fonts
+ * e ritorna la regola @font-face. Se il pacchetto manca si usano i font di sistema (avviso).
+ */
+function installFont(outDir) {
+  const dir = path.join(ROOT, 'node_modules', '@fontsource-variable', 'outfit', 'files');
+  const file = fs.existsSync(dir) && fs.readdirSync(dir).find(f => /latin-wght-normal\.woff2$/.test(f) && !/ext/.test(f));
+  if (!file) {
+    warn('Font Outfit non trovato', 'esegui npm install; intanto il sito usa i font di sistema');
+    return null;
+  }
+  const data = fs.readFileSync(path.join(dir, file));
+  const url = `/assets/fonts/outfit.${shortHash(data.toString('base64'))}.woff2`;
+  writeFile(path.join(outDir, url), data);
+  const css = `@font-face{font-family:'Outfit';font-style:normal;font-display:swap;font-weight:100 900;src:url(${url}) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}\n`;
+  return { url, css };
 }
 
 /** Giochi correlati: prima la stessa categoria, poi gli altri. Ordine stabile tra una build e l'altra. */

@@ -20,3 +20,6 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Cartella di lavoro di tools/prepare-preview-branches.js
+.migration/

@@ -86,6 +86,20 @@ Per la build da GitHub in locale conviene un token (`cp .env.example .env` e com
 
 Opzioni di `src/build.js`: `--target production|preview`, `--games <cartella>`, `--only a,b`, `--out <cartella>`, `--base-url <url>`.
 
+## Preparare il branch preview dei giochi esistenti
+
+Per portare in blocco i giochi già presenti nell'organizzazione alla struttura attuale:
+
+```bash
+npm run prepare-previews             # prova: prepara tutto in .migration/ e mostra cosa cambierebbe
+npm run prepare-previews -- --apply  # commit e push del branch preview di ogni gioco
+npm run prepare-previews -- --only angle,dino   # solo alcuni repo
+```
+
+Per ogni gioco crea (o aggiorna) il branch `preview` partendo da `main`, aggiunge il workflow PewPlay e aggiorna `game.json` al formato attuale. **Non tocca mai `main`**: il merge lo fai tu, gioco per gioco. Si può rilanciare quante volte vuoi: i repo già a posto vengono saltati.
+
+Serve git con permesso di push sull'organizzazione, incluso il permesso `workflow` (con GitHub CLI: `gh auth refresh -s workflow`).
+
 ## Lanciare la build a mano
 
 Repo `pewplay` → **Actions → Deploy → Run workflow** → *entrambi*, *production* o *preview*. Nel riepilogo della run c'è la tabella dei giochi con versione, peso ed eventuali errori/avvisi.
@@ -108,51 +122,39 @@ Avvisi ed errori compaiono in cima alla pagina della run su GitHub Actions e nel
 
 ## `game.json`
 
-Tutti i campi sono facoltativi. Con `"$schema"` VS Code suggerisce i campi e segnala gli errori.
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/pewplay/pewplay/main/schema/game.schema.json",
-  "title": "Memory Match",
-  "description": "Flip the cards and find all the matching pairs…",
-  "howToPlay": "Turn over two cards at a time…",
-  "controls": [
-    { "input": "Click / Tap", "action": "Flip a card" }
-  ],
-  "category": "Puzzle",
-  "tags": ["memory", "cards"],
-  "author": "PewPlay",
-  "playMode": "SinglePlayer",
-  "orientation": "any",
-  "featured": false,
-  "added": "2026-09-26",
-  "draft": false,
-  "exclude": ["docs", "*.psd"]
-}
-```
+Tutti i campi sono facoltativi (tranne che serve un `title` sensato). Il riferimento completo, con dove compare ogni campo e come scriverlo, è nel README di `pewplay-game-template`; il template ha un `game.json` compilato in ogni campo.
 
 | Campo | Cosa fa |
 |---|---|
-| `title` | Nome del gioco (default: nome del repo) |
-| `description` | Meta description, link condivisi (50–160 caratteri) |
-| `howToPlay` | Paragrafo "How to play" nella pagina del gioco (utile per Google e AdSense) |
-| `controls` | Tabella dei comandi nella pagina del gioco |
-| `category` | `Action`, `Arcade`, `Board`, `Card`, `Casual`, `Educational`, `Puzzle`, `Racing`, `Sports`, `Strategy`, `Other` |
-| `tags` | Parole chiave per ricerca e SEO |
-| `author` | Autore (pagina + dati strutturati) |
-| `playMode` | `SinglePlayer`, `MultiPlayer` o `Both` |
-| `orientation` | `any`, `landscape`, `portrait`: su mobile mostra "rotate your device" |
-| `featured` | In cima alla home |
-| `added` | Data di pubblicazione: badge "New" per 30 giorni e ordinamento |
-| `draft` | `true` = mai sul sito pubblico, anche se è su `main` |
-| `exclude` | File/cartelle da non pubblicare (stile `.gitignore`) |
-
-Non vengono mai pubblicati: `.git*`, `.github`, `*.md`, `*.scss`, `package.json`, `node_modules`, file di editor/OS, `game.json`, `og.*`.
+| `title`, `description` | titolo e descrizione (pagina, Google, link condivisi) |
+| `about` | sezione "About": testo lungo, il più importante per Google |
+| `howToPlay`, `controls`, `tips` | sezioni della pagina e finestra **?** nella barra del gioco |
+| `faq` | domande e risposte (anche come dati strutturati FAQPage) |
+| `category`, `tags` | pagina di categoria, breadcrumb, ricerca |
+| `author`, `playMode`, `orientation` | dettagli della scheda |
+| `cover`, `screenshots` | copertina 16:9 (schermata "Play now" e immagine dei link condivisi) e galleria (default: `cover.png` e cartella `screenshots/`) |
+| `featured`, `added`, `draft`, `exclude` | primo nella lista, badge "New", bozza, file da non pubblicare |
 
 ### Immagini
-- `preview.png` (o `.jpg`/`.webp`) quadrata, 512×512 o più → card, splash, giochi correlati. Viene convertita in `preview.webp`.
-- `og.png` 1200×630 facoltativa → anteprima nei link condivisi. Se manca viene **generata** da preview + titolo.
-- Se manca anche la preview, viene creato un segnaposto col titolo.
+Il sito crea da solo tutte le versioni ottimizzate (AVIF + WebP, più dimensioni):
+
+| File del gioco | Diventa | Se manca |
+|---|---|---|
+| `preview.png` quadrata | card 256/512 px | segnaposto con il titolo |
+| `cover.png` 16:9 | schermata "Play now" e sfondo dell'immagine condivisa, 640/1280 px | generata dalla preview |
+| `screenshots/*.png` | galleria con miniature e visualizzatore | sezione nascosta |
+| `og.png` 1200×630 | immagine dei link condivisi | **generata**: copertina sfocata + icona + categoria + titolo + logo |
+
+## Pagine e SEO
+
+- **Home**: ricerca, filtri per categoria e griglia di tutti i giochi.
+- **Pagine di categoria** `/<categoria>-games/` (es. `/puzzle-games/`): introduzione, tutti i giochi della categoria, link alle altre. I testi introduttivi sono in `src/strings.js` → `CATEGORY_INFO`.
+- **Pagina gioco**: il gioco si carica solo al clic su "Play now" (pagina molto più veloce); pulsanti Aiuto, Condividi, Tema, Schermo intero; breadcrumb; sezioni da `game.json`; giochi correlati. Un link che finisce con `#play` avvia subito il gioco.
+- **404** con ricerca e giochi suggeriti.
+- **Dati strutturati**: WebSite, Organization, ItemList (home), CollectionPage (categorie), VideoGame con screenshot, BreadcrumbList e FAQPage (giochi).
+- **Sitemap** con categorie e immagini; **IndexNow**: dopo ogni deploy pubblico Bing, Yandex & co. vengono avvisati delle pagine aggiornate (Google usa la sitemap).
+- **Velocità**: font Outfit servito dal sito (pacchetto `@fontsource-variable/outfit`), immagini responsive, nessuna richiesta esterna tranne AdSense/Analytics.
+- **Accessibilità**: link "Skip to content", testi alternativi, navigazione da tastiera, focus sul gioco al Play, finestre chiudibili con Esc.
 
 ## Il gioco dentro il sito
 
@@ -168,10 +170,10 @@ pewplay/
 │   ├── build.js            ← la build, passo per passo
 │   ├── sources.js          ← trova e scarica i giochi (GitHub o cartella locale) + cache
 │   ├── game-config.js      ← legge e controlla game.json
-│   ├── images.js           ← preview.webp, og.jpg, segnaposto
-│   ├── strings.js          ← testi dell'interfaccia del sito
+│   ├── images.js           ← preview, copertina, screenshot, immagine social
+│   ├── strings.js          ← testi dell'interfaccia e delle pagine di categoria
 │   ├── static-files.js     ← sitemap, robots, manifest, _headers
-│   ├── render/             ← HTML delle pagine (layout, home, gioco, privacy/404)
+│   ├── render/             ← HTML delle pagine (layout, home, categoria, gioco, privacy/404)
 │   ├── assets/             ← CSS e JS del sito
 │   ├── check-game.js       ← `npm run check` (usato anche dalla Action dei giochi)
 │   ├── deploy.js           ← pubblica dist/ su Cloudflare Pages (con controllo credenziali)
@@ -189,7 +191,9 @@ dist/
 ├── index.html                         home
 ├── <gioco>/index.html                 pagina del gioco
 ├── <gioco>/play/…                     file del gioco
-├── <gioco>/preview.webp, og.jpg
+├── <gioco>/img/…                      preview, copertina e screenshot (AVIF/WebP)
+├── <gioco>/og.jpg                     immagine per i link condivisi
+├── <categoria>-games/index.html       pagine di categoria
 ├── privacy-policy/, 404.html
 ├── assets/site.<hash>.css|js          cache lunga
 ├── sitemap.xml, robots.txt, ads.txt, manifest.json   (sitemap e ads.txt solo sul pubblico)

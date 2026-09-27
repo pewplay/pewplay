@@ -95,10 +95,15 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.matrix) }}
-    # Se arrivano tanti push di fila, resta solo l'ultimo build per ogni sito
+    # Un solo build alla volta per ogni sito, in coda:
+    #  - il build in corso non viene mai interrotto (nessun deploy lasciato a metà);
+    #  - tutti i push che arrivano nel frattempo si riducono a UN solo build successivo
+    #    (GitHub tiene al massimo 1 run in attesa: le più vecchie in attesa vengono annullate).
+    # Ogni build ricostruisce il sito con tutti i giochi, quindi l'ultimo include tutte le modifiche.
+    # Esempio: 27 giochi pubblicati di fila → 2 build per sito, non 27.
     concurrency:
       group: deploy-${{ matrix.target }}
-      cancel-in-progress: true
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
         with:

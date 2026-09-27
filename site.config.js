@@ -8,8 +8,8 @@
 export default {
   // Nome e indirizzi
   name: 'PewPlay',
-  url: 'https://pewplay.pages.dev',                // sito pubblico (branch main)
-  previewUrl: 'https://preview.pewplay.pages.dev', // sito di anteprima (branch preview)
+  url: 'https://www.pewplay.com',                      // sito pubblico (branch main)
+  previewUrl: 'https://preview.pewplay.pages.dev',     // sito di anteprima (branch preview)
   themeColor: '#6C5CE7',
   contactEmail: 'contact@pewplay.com',
 
@@ -26,12 +26,12 @@ export default {
 
   // Cloudflare Pages
   cloudflare: {
-    pagesProject: 'pewplay',    // nome del progetto Pages
+    pagesProject: 'pewplay',        // nome del progetto Pages
   },
 
   // Pubblicità e statistiche (attive SOLO sul sito pubblico, mai in preview)
   adsensePublisherId: 'pub-6003231730369215', // '' per disattivare AdSense
-  gaMeasurementId: 'G-QBZWVSXMXL',                        // es. 'G-XXXXXXXXXX'; '' = Analytics disattivato
+  gaMeasurementId: '',                        // es. 'G-XXXXXXXXXX'; '' = Analytics disattivato
 
   // Privacy policy
   privacy: {
