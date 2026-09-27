@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/pewplay/pewplay/main/schema/game.schema.json",
+  "title": "PewPlay game.json",
+  "description": "PewPlay game metadata. All fields are optional.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "description": "Game name (20–50 characters is ideal)."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description for Google and shared links (50–160 characters)."
+    },
+    "howToPlay": {
+      "type": "string",
+      "description": "How to play: one or two paragraphs shown on the game page."
+    },
+    "category": {
+      "type": "string",
+      "description": "Categoria. Quelle standard vengono tradotte automaticamente.",
+      "anyOf": [
+        {
+          "enum": [
+            "Action",
+            "Arcade",
+            "Board",
+            "Card",
+            "Casual",
+            "Educational",
+            "Puzzle",
+            "Racing",
+            "Sports",
+            "Strategy",
+            "Other"
+          ]
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Parole chiave (3–8), usate per ricerca e SEO."
+    },
+    "author": {
+      "type": "string",
+      "description": "Autore del gioco."
+    },
+    "playMode": {
+      "enum": [
+        "SinglePlayer",
+        "MultiPlayer",
+        "Both"
+      ],
+      "default": "SinglePlayer"
+    },
+    "controls": {
+      "type": "array",
+      "description": "Comandi mostrati nella pagina del gioco.",
+      "items": {
+        "type": "object",
+        "required": [
+          "input",
+          "action"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "Tasto o gesto, es. \"Spazio\", \"← →\", \"Tap\"."
+          },
+          "action": {
+            "type": "string",
+            "description": "What it does."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "orientation": {
+      "enum": [
+        "any",
+        "landscape",
+        "portrait"
+      ],
+      "default": "any",
+      "description": "Orientamento consigliato su mobile: mostra un suggerimento \"ruota il dispositivo\"."
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mostra il gioco tra i primi in home."
+    },
+    "added": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Data di pubblicazione (AAAA-MM-GG): badge \"Nuovo\" per 30 giorni e ordinamento."
+    },
+    "draft": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = never published on the public site, even from main."
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "File/cartelle da NON pubblicare (stile .gitignore), es. [\"docs\", \"*.psd\"]."
+    }
+  },
+  "additionalProperties": false
+}

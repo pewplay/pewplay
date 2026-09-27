@@ -1,31 +1,22 @@
-# Build output
+# Output della build
 dist/
+dist-dev/
+.cache/
 
-# Dependencies
+# Dipendenze
 node_modules/
 
-# Environment variables
+# Segreti locali
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
-# OS files
+# Wrangler
+.wrangler/
+
+# OS / editor
 .DS_Store
 Thumbs.db
-Desktop.ini
-
-# Editor / IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# Logs
 *.log
-npm-debug.log*
-
-# Optional icon variants (keep favicon.png)
-# icon-32.png
-# icon-192.png
-# icon-512.png

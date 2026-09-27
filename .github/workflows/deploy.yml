@@ -1,0 +1,140 @@
+# Build e pubblicazione di PewPlay su Cloudflare Pages.
+#
+#   main    = sito pubblico   → codice del sito da pewplay@main,    giochi dal loro main
+#   preview = sito anteprima  → codice del sito da pewplay@preview, giochi dal loro preview
+#
+# Quando parte:
+#   - push su main / preview di questo repo      → ricostruisce il sito corrispondente
+#   - push su main / preview di un gioco         → idem (il gioco avvisa questo repo)
+#   - ogni notte                                 → entrambi, ma pubblica solo se qualcosa è cambiato
+#   - a mano: Actions → Deploy → Run workflow    → scegli tu cosa ricostruire
+#
+# Secrets richiesti (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN   token Cloudflare con permesso "Account → Cloudflare Pages → Edit"
+#   CLOUDFLARE_ACCOUNT_ID  ID del tuo account Cloudflare
+#   GH_READ_TOKEN          (facoltativo) serve solo se alcuni giochi stanno in repo privati
+
+name: Deploy
+
+# Nome della run nella lista Actions: dice subito COSA la ha avviata e DOVE pubblica.
+# Nota: le run avviate da un gioco risultano sempre sul branch "main" di questo repo
+# (regola di GitHub per repository_dispatch), anche quando pubblicano l'anteprima.
+run-name: >-
+  ${{ github.event_name == 'repository_dispatch' && format('Gioco {0} ({1}) → {2}', github.event.client_payload.repo, github.event.client_payload.branch, github.event.client_payload.branch == 'preview' && 'PREVIEW' || 'PRODUCTION')
+  || github.event_name == 'push' && format('Sito ({0}) → {1}', github.ref_name, github.ref_name == 'preview' && 'PREVIEW' || 'PRODUCTION')
+  || github.event_name == 'workflow_dispatch' && format('Manuale → {0}', inputs.target)
+  || 'Build notturna → PRODUCTION + PREVIEW' }}
+
+on:
+  push:
+    branches: [main, preview]
+    paths-ignore: ['**.md']
+  repository_dispatch:
+    types: [game-updated]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Cosa ricostruire'
+        type: choice
+        options: [entrambi, production, preview]
+        default: entrambi
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Scegli cosa ricostruire
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      any: ${{ steps.plan.outputs.any }}
+    steps:
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          PUSH_BRANCH: ${{ github.ref_name }}
+          GAME: ${{ github.event.client_payload.repo }}
+          GAME_BRANCH: ${{ github.event.client_payload.branch }}
+          INPUT: ${{ github.event.inputs.target }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$EVENT" in
+            push)                want="$PUSH_BRANCH" ;;
+            repository_dispatch) echo "Aggiornato il gioco $GAME (branch $GAME_BRANCH)"; want="$GAME_BRANCH" ;;
+            workflow_dispatch)   case "$INPUT" in production) want=main ;; preview) want=preview ;; *) want="main preview" ;; esac ;;
+            *)                   want="main preview" ;;
+          esac
+
+          items=""
+          for b in $want; do
+            case "$b" in
+              main)    items="$items,{\"target\":\"production\",\"ref\":\"main\"}" ;;
+              preview)
+                # API autenticata: funziona anche se il repo pewplay è privato
+                if gh api "repos/$REPO/branches/preview" --silent 2>/dev/null; then
+                  items="$items,{\"target\":\"preview\",\"ref\":\"preview\"}"
+                else
+                  echo "::warning::Il repo pewplay non ha il branch 'preview': anteprima saltata. Crealo una volta con: git push origin main:preview"
+                fi ;;
+              *) echo "::notice title=Niente da pubblicare::Il branch '$b' non è collegato a nessun sito (pubblicano solo main e preview)." ;;
+            esac
+          done
+          echo "matrix=[${items#,}]" >> "$GITHUB_OUTPUT"
+          [ -n "$items" ] && echo "any=true" >> "$GITHUB_OUTPUT" || echo "any=false" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: ${{ matrix.target }}
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    # Se arrivano tanti push di fila, resta solo l'ultimo build per ogni sito
+    concurrency:
+      group: deploy-${{ matrix.target }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}         # codice del sito: main per il pubblico, preview per l'anteprima
+          persist-credentials: false     # la build usa il suo token: evita credenziali doppie
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache dipendenze npm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
+
+      - name: Installa dipendenze
+        run: npm install --no-audit --no-fund
+
+      # I giochi scaricati restano in cache: vengono riscaricati solo quelli con nuovi commit
+      - name: Cache giochi
+        uses: actions/cache@v4
+        with:
+          path: .cache/${{ matrix.target }}
+          key: games-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: games-${{ matrix.target }}-
+
+      - name: Build
+        env:
+          GH_TOKEN: ${{ secrets.GH_READ_TOKEN || github.token }}
+          PEWPLAY_ORG: ${{ github.repository_owner }}
+        run: node src/build.js --target ${{ matrix.target }}
+
+      - name: Pubblica su Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # Salta il deploy se online c'è già la stessa versione; se lo lanci a mano pubblica sempre.
+        run: node src/deploy.js --target ${{ matrix.target }} ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}

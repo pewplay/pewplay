@@ -1,19 +1,27 @@
 {
   "name": "pewplay",
-  "version": "2.0.0",
-  "description": "Static site generator for PewPlay — free online games arcade",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Static site generator for PewPlay \u2014 free online games arcade",
+  "type": "module",
   "scripts": {
-    "build": "node build.js",
-    "deploy": "npm run build && wrangler deploy",
-    "deploy:only": "wrangler deploy"
+    "build": "node src/build.js",
+    "build:preview": "node src/build.js --target preview",
+    "dev": "node src/dev.js",
+    "serve": "node src/serve.js",
+    "check": "node src/check-game.js",
+    "deploy": "npm run build && node src/deploy.js --target production",
+    "deploy:preview": "npm run build:preview && node src/deploy.js --target preview",
+    "deploy:check": "node src/deploy.js --check"
   },
   "dependencies": {
-    "sharp": "^0.33.5"
+    "sharp": "^0.34.0"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "license": "MIT"
 }
