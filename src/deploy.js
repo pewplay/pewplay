@@ -149,6 +149,22 @@ async function main() {
   const liveAt = opt.isPreview ? `https://${branch}.${project}.pages.dev` : opt.config.url;
   info(`\nPubblicato: ${liveAt}${!opt.isPreview && !opt.config.url.includes(`${project}.pages.dev`) ? ` (e https://${project}.pages.dev)` : ''}\n`);
   summary(`\n**Pubblicato** su ${liveAt}\n`);
+
+  // IndexNow: avvisa Bing, Yandex & co. che il sito è cambiato (solo sito pubblico; un errore qui non blocca niente)
+  if (!opt.isPreview && built.indexNowKey && built.urls?.length) {
+    try {
+      const host = new URL(opt.config.url).host;
+      const res = await fetch('https://api.indexnow.org/indexnow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ host, key: built.indexNowKey, keyLocation: `${opt.config.url}/${built.indexNowKey}.txt`, urlList: built.urls.slice(0, 10000) }),
+      });
+      if (res.ok) info(`IndexNow: ${built.urls.length} indirizzi segnalati ai motori di ricerca`);
+      else warn('IndexNow non riuscito', `risposta ${res.status} (non blocca niente: Google usa la sitemap)`);
+    } catch (e) {
+      warn('IndexNow non raggiungibile', `${e.message} (non blocca niente)`);
+    }
+  }
 }
 
 main().catch(e => process.exit(printFatal(e)));

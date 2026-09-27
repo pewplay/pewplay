@@ -1,22 +1,35 @@
 // File "di servizio" del sito: sitemap, robots, ads.txt, manifest PWA,
 // e il file speciale di Cloudflare Pages _headers.
-import { esc } from './util.js';
+import { esc, shortHash } from './util.js';
 
 export function sitemapXml(site, games) {
   const today = new Date().toISOString().slice(0, 10);
-  const entry = (urlPath, lastmod, image) => `  <url>
+  const entry = (urlPath, lastmod, images = []) => `  <url>
     <loc>${esc(site.baseUrl + urlPath)}</loc>
-    <lastmod>${lastmod}</lastmod>${image ? `
-    <image:image><image:loc>${esc(site.baseUrl + image)}</image:loc></image:image>` : ''}
+    <lastmod>${lastmod}</lastmod>${images.map(img => `
+    <image:image><image:loc>${esc(site.baseUrl + img)}</image:loc></image:image>`).join('')}
   </url>`;
-  const newest = games.map(g => g.updatedAt?.slice(0, 10)).filter(Boolean).sort().pop() || today;
+  const day = g => (g.updatedAt || today).slice(0, 10);
+  const newest = list => list.map(day).sort().pop() || today;
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-${entry('/', newest)}
+${entry('/', newest(games))}
+${(site.categories || []).map(c => entry(`/${c.slug}/`, newest(c.games))).join('\n')}
+${games.map(g => entry(`/${g.slug}/`, day(g), [g.images.cover.webp[1280], g.images.preview.webp[512], ...g.images.shots.map(s => s.full)])).join('\n')}
 ${entry('/privacy-policy/', site.config.privacy.updated)}
-${games.map(g => entry(`/${g.slug}/`, (g.updatedAt || today).slice(0, 10), g.images.preview)).join('\n')}
 </urlset>
 `;
+}
+
+/** Tutti gli URL pubblici del sito (per IndexNow). */
+export function siteUrls(site, games) {
+  return ['/', ...(site.categories || []).map(c => `/${c.slug}/`), ...games.map(g => `/${g.slug}/`), '/privacy-policy/']
+    .map(p => site.baseUrl + p);
+}
+
+/** Chiave IndexNow: fissa per ogni sito (derivata dall'indirizzo), pubblicata in /<chiave>.txt. */
+export function indexNowKey(site) {
+  return shortHash(`indexnow:${site.config.url}`, 32);
 }
 
 export function robotsTxt(site) {

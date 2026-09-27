@@ -4,7 +4,7 @@
 // Usato anche dalla GitHub Action dei repo dei giochi. Nessuna dipendenza npm.
 import fs from 'node:fs';
 import path from 'node:path';
-import { readGameJson, validateGameJson, normalizeGame, DEFAULT_EXCLUDE } from './game-config.js';
+import { readGameJson, validateGameJson, normalizeGame, findSiteImages, DEFAULT_EXCLUDE } from './game-config.js';
 import { walkFiles, makeMatcher, formatBytes } from './util.js';
 
 const dir = path.resolve(process.argv[2] || '.');
@@ -24,6 +24,7 @@ function pngSize(file) {
 }
 
 // game.json
+let game = null;
 const { raw, file, parseError } = readGameJson(dir);
 if (parseError) errors.push(`${file} non è JSON valido: ${parseError}`);
 else if (!raw) errors.push('manca game.json nella root del repo');
@@ -34,7 +35,13 @@ else {
   const g = normalizeGame(raw, { slug: path.basename(dir) });
   ok.push(`game.json: "${g.title}" · ${g.category}${g.draft ? ' · bozza' : ''}`);
   if (g.draft) warnings.push('"draft": true → il gioco NON va sul sito pubblico anche se è su main');
-  if (raw.howToPlay === undefined || raw.howToPlay === '') warnings.push('manca "howToPlay": un paragrafo su come si gioca aiuta Google e i giocatori');
+  // Contenuti consigliati: più testo utile = pagina migliore per Google e per i giocatori
+  const missingContent = [
+    !g.about && '"about"', !g.howToPlay && '"howToPlay"', !g.controls.length && '"controls"', !g.tips.length && '"tips"', !g.faq.length && '"faq"',
+  ].filter(Boolean);
+  if (missingContent.length) warnings.push(`contenuti consigliati mancanti: ${missingContent.join(', ')} (vedi il template)`);
+  else ok.push('contenuti: about, howToPlay, controls, tips, faq');
+  game = g;
 }
 
 // index.html
@@ -58,7 +65,21 @@ else {
   else ok.push(`preview: ${path.basename(preview)}${s ? ` ${s.w}×${s.h}` : ''}`);
 }
 const og = ['png', 'jpg', 'jpeg', 'webp'].map(e => path.join(dir, `og.${e}`)).find(f => fs.existsSync(f));
-ok.push(og ? `immagine social: ${path.basename(og)}` : 'immagine social: verrà generata da preview + titolo');
+ok.push(og ? `immagine social: ${path.basename(og)}` : 'immagine social: verrà generata automaticamente');
+if (game) {
+  const imgs = findSiteImages(dir, game);
+  for (const m of imgs.missing) errors.push(`il file "${m}" indicato in game.json non esiste`);
+  if (imgs.cover) {
+    const s = imgs.cover.endsWith('.png') ? pngSize(path.join(dir, imgs.cover)) : null;
+    if (s && Math.abs(s.w / s.h - 16 / 9) > 0.05) warnings.push(`copertina ${imgs.cover} non è 16:9 (${s.w}×${s.h}): verrà ritagliata`);
+    else if (s && s.w < 1280) warnings.push(`copertina ${imgs.cover} è piccola (${s.w}×${s.h}), consigliato 1280×720`);
+    else ok.push(`copertina: ${imgs.cover}${s ? ` ${s.w}×${s.h}` : ''}`);
+  } else if (!imgs.missing.length) {
+    warnings.push('manca la copertina (cover.png 1280×720): verrà generata dalla preview');
+  }
+  if (imgs.screenshots.length) ok.push(`screenshot: ${imgs.screenshots.length}`);
+  else warnings.push('nessuno screenshot (cartella screenshots/ o campo "screenshots"): consigliati 2–4');
+}
 
 // file pubblicati
 if (fs.existsSync(dir)) {

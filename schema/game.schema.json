@@ -16,9 +16,62 @@
       "type": "string",
       "description": "Short description for Google and shared links (50–160 characters)."
     },
+    "about": {
+      "type": "string",
+      "description": "About the game: 1–3 paragraphs shown on the game page (separate paragraphs with an empty line: \\n\\n). The most important text for Google."
+    },
     "howToPlay": {
       "type": "string",
       "description": "How to play: one or two paragraphs shown on the game page."
+    },
+    "controls": {
+      "type": "array",
+      "description": "Comandi mostrati nella pagina del gioco.",
+      "items": {
+        "type": "object",
+        "required": [
+          "input",
+          "action"
+        ],
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "Tasto o gesto, es. \"Spazio\", \"← →\", \"Tap\"."
+          },
+          "action": {
+            "type": "string",
+            "description": "What it does."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "tips": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Short tips, one sentence each (shown as a list)."
+    },
+    "faq": {
+      "type": "array",
+      "description": "Frequently asked questions shown on the game page.",
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "answer"
+        ],
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
     },
     "category": {
       "type": "string",
@@ -63,28 +116,6 @@
       ],
       "default": "SinglePlayer"
     },
-    "controls": {
-      "type": "array",
-      "description": "Comandi mostrati nella pagina del gioco.",
-      "items": {
-        "type": "object",
-        "required": [
-          "input",
-          "action"
-        ],
-        "properties": {
-          "input": {
-            "type": "string",
-            "description": "Tasto o gesto, es. \"Spazio\", \"← →\", \"Tap\"."
-          },
-          "action": {
-            "type": "string",
-            "description": "What it does."
-          }
-        },
-        "additionalProperties": false
-      }
-    },
     "orientation": {
       "enum": [
         "any",
@@ -93,6 +124,20 @@
       ],
       "default": "any",
       "description": "Orientamento consigliato su mobile: mostra un suggerimento \"ruota il dispositivo\"."
+    },
+    "cover": {
+      "type": "string",
+      "pattern": "\\.(png|jpe?g|webp)$",
+      "description": "Cover image 16:9 (recommended 1280×720). Default: cover.png in the repo root. Used for the Play screen, featured games and shared links."
+    },
+    "screenshots": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "pattern": "\\.(png|jpe?g|webp)$"
+      },
+      "description": "Screenshots (recommended 1280×720). Default: all images in the screenshots/ folder."
     },
     "featured": {
       "type": "boolean",
