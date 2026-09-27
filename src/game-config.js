@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { prettifySlug } from './util.js';
-import { CATEGORIES } from './strings.js';
+import { CATEGORIES, normalizeCategory, categorySlug } from './strings.js';
 
 export const PLAY_MODES = ['SinglePlayer', 'MultiPlayer', 'Both'];
 export const ORIENTATIONS = ['any', 'landscape', 'portrait'];
@@ -55,8 +55,13 @@ export function validateGameJson(raw) {
   else if (typeof raw.description === 'string' && (raw.description.length < 50 || raw.description.length > 170)) {
     warnings.push(`"description" dovrebbe essere lunga 50–160 caratteri (ora ${raw.description.length})`);
   }
-  if (typeof raw.category === 'string' && !CATEGORIES.includes(raw.category)) {
-    warnings.push(`categoria "${raw.category}" non standard (standard: ${CATEGORIES.join(', ')})`);
+  if (typeof raw.category === 'string' && raw.category.trim()) {
+    const cat = normalizeCategory(raw.category);
+    if (!CATEGORIES.includes(cat)) {
+      warnings.push(`categoria "${cat}" non standard: la sua pagina /${categorySlug(cat)}/ avrà un testo generico. Usa una standard (${CATEGORIES.join(', ')}) oppure aggiungila in src/strings.js (CATEGORY_INFO) del repo pewplay`);
+    } else if (cat !== raw.category) {
+      warnings.push(`categoria "${raw.category}" letta come "${cat}": scrivi "category": "${cat}"`);
+    }
   }
   for (const key of ['tags', 'exclude']) {
     if (raw[key] !== undefined && !(Array.isArray(raw[key]) && raw[key].every(x => typeof x === 'string'))) {
@@ -129,7 +134,7 @@ export function normalizeGame(raw, { slug, repoDescription = '' }) {
     controls: Array.isArray(c.controls)
       ? c.controls.filter(x => isObj(x) && x.input).map(x => ({ input: String(x.input), action: str(x.action) }))
       : [],
-    category: str(c.category) || 'Other',
+    category: normalizeCategory(c.category),
     tags: [...new Set((Array.isArray(c.tags) ? c.tags : []).map(String))],
     author: PLACEHOLDER_AUTHORS.includes(str(c.author).toLowerCase()) ? '' : str(c.author),
     playMode: PLAY_MODES.includes(c.playMode) ? c.playMode : 'SinglePlayer',

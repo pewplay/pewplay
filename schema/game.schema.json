@@ -75,7 +75,7 @@
     },
     "category": {
       "type": "string",
-      "description": "Categoria. Quelle standard vengono tradotte automaticamente.",
+      "description": "Categoria. Usa una di quelle standard; una diversa funziona, ma la sua pagina avrà un testo generico.",
       "anyOf": [
         {
           "enum": [

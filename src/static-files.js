@@ -14,6 +14,7 @@ export function sitemapXml(site, games) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${entry('/', newest(games))}
+${(site.categories || []).length ? entry('/categories/', newest(games)) : ''}
 ${(site.categories || []).map(c => entry(`/${c.slug}/`, newest(c.games))).join('\n')}
 ${games.map(g => entry(`/${g.slug}/`, day(g), [g.images.cover.webp[1280], g.images.preview.webp[512], ...g.images.shots.map(s => s.full)])).join('\n')}
 ${entry('/privacy-policy/', site.config.privacy.updated)}
@@ -23,7 +24,7 @@ ${entry('/privacy-policy/', site.config.privacy.updated)}
 
 /** Tutti gli URL pubblici del sito (per IndexNow). */
 export function siteUrls(site, games) {
-  return ['/', ...(site.categories || []).map(c => `/${c.slug}/`), ...games.map(g => `/${g.slug}/`), '/privacy-policy/']
+  return ['/', ...((site.categories || []).length ? ['/categories/'] : []), ...(site.categories || []).map(c => `/${c.slug}/`), ...games.map(g => `/${g.slug}/`), '/privacy-policy/']
     .map(p => site.baseUrl + p);
 }
 

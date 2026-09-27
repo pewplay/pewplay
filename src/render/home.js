@@ -3,6 +3,8 @@ import { esc } from '../util.js';
 import { T } from '../strings.js';
 import { layout, header, footer, previewBar, picture, ICONS } from './layout.js';
 
+// Filtri di categoria visibili in home prima di "+N more"
+const HOME_CHIPS_SHOWN = 8;
 const CARD_SIZES = '(min-width:1100px) 220px, (min-width:820px) 24vw, (min-width:560px) 31vw, 46vw';
 
 /** Card quadrata di un gioco (home, categorie, correlati, 404). */
@@ -28,9 +30,12 @@ export function gameCard(game, { lazy = true, sizes = CARD_SIZES, filterable = f
 export function renderHome(site, games) {
   const c = site.config;
   const categories = site.categories || [];
+  // Filtri: le categorie con più giochi sono sempre visibili, le altre si aprono con "+N more"
+  const hidden = Math.max(0, categories.length - HOME_CHIPS_SHOWN);
   const chips = [['all', T.all], ...categories.map(cat => [cat.name, cat.name])]
-    .map(([key, label], i) => `<button class="category-chip" type="button" data-category="${esc(key)}" aria-pressed="${i === 0}">${esc(label)}</button>`)
-    .join('');
+    .map(([key, label], i) => `<button class="category-chip${i > HOME_CHIPS_SHOWN ? ' is-extra' : ''}" type="button" data-category="${esc(key)}" aria-pressed="${i === 0}">${esc(label)}</button>`)
+    .join('')
+    + (hidden ? `<button class="category-chip category-chip--more" type="button" id="chips-more" aria-expanded="false" data-more="${esc(T.moreCategories(hidden))}" data-less="${esc(T.fewerCategories)}">${esc(T.moreCategories(hidden))}</button>` : '');
 
   const body = `
   ${header(site)}
@@ -53,7 +58,7 @@ export function renderHome(site, games) {
         <h2 id="games-heading">${esc(T.exploreGames)}</h2>
         <p id="result-count" aria-live="polite" data-format="${esc(JSON.stringify(T.countWords))}">${esc(T.gamesCount(games.length))}</p>
       </div>
-      ${games.length ? `<div class="category-row" role="group" aria-label="${esc(T.filterLabel)}">${chips}</div>` : ''}
+      ${games.length ? `<div class="category-row" id="category-row" role="group" aria-label="${esc(T.filterLabel)}">${chips}</div>` : ''}
       <div class="grid" id="grid">
         ${games.map((g, i) => gameCard(g, { lazy: i > 9, filterable: true })).join('')}
         ${games.length

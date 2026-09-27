@@ -127,10 +127,15 @@ export function header(site, { variant = 'site', gameTitle = '', hasHelp = false
   </header>`;
 }
 
+const FOOTER_CATEGORIES = 8;
+
 export function footer(site) {
   const s = T;
   const c = site.config;
-  const cats = (site.categories || []).map(cat => `<a href="/${cat.slug}/">${esc(cat.label)}</a>`).join('');
+  // Nel footer solo le categorie con più giochi; tutte le altre sono in /categories/
+  const all = site.categories || [];
+  const cats = all.slice(0, FOOTER_CATEGORIES).map(cat => `<a href="/${cat.slug}/">${esc(cat.label)}</a>`).join('')
+    + (all.length > FOOTER_CATEGORIES ? `<a href="/categories/">${esc(s.allCategories)}</a>` : '');
   return `<footer class="footer">
     <div class="footer__inner">
       <div class="footer__left">

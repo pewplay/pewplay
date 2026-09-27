@@ -47,6 +47,11 @@ export const T = {
   moreInfo: 'Game info & more games',
   backToGame: 'Back to game',
   otherCategories: 'Other categories',
+  allCategories: 'All categories',
+  allCategoriesTitle: 'All Game Categories',
+  allCategoriesIntro: 'Browse every category of free browser games on PewPlay. Pick a genre and start playing instantly — no downloads, no sign-ups.',
+  moreCategories: n => `+${n} more`,
+  fewerCategories: 'Show less',
   moreIn: cat => `More ${cat.toLowerCase()} games`,
   allDevices: 'Desktop · Tablet · Mobile',
   allDevicesLong: 'Works on desktop, tablet and mobile — no download needed.',
@@ -68,10 +73,9 @@ export const T = {
   player: name => `${name} game player`,
 };
 
-// Categorie standard. Una categoria diversa viene mostrata così com'è (con un avviso nel controllo).
-export const CATEGORIES = ['Action', 'Arcade', 'Board', 'Card', 'Casual', 'Educational', 'Puzzle', 'Racing', 'Sports', 'Strategy', 'Other'];
-
-// Testi delle pagine di categoria (/puzzle-games/ …): titolo e introduzione, importanti per Google.
+// Categorie standard e testi delle loro pagine (/puzzle-games/ …): titolo e introduzione, importanti per Google.
+// Per aggiungere una categoria standard basta aggiungerla qui: diventa subito valida per i giochi.
+// Un gioco può anche usare una categoria non elencata: funziona lo stesso, con un testo generico e un avviso.
 export const CATEGORY_INFO = {
   Action: {
     label: 'Action Games',
@@ -119,11 +123,30 @@ export const CATEGORY_INFO = {
   },
 };
 
+export const CATEGORIES = Object.keys(CATEGORY_INFO);
+
 export function categoryInfo(category) {
   return CATEGORY_INFO[category] || {
     label: `${category} Games`,
     intro: `Play free ${category.toLowerCase()} games online. Every game runs instantly in your browser on desktop, tablet and mobile — no download needed.`,
   };
+}
+
+/**
+ * Rende uniforme la categoria scritta in game.json, così varianti dello stesso nome finiscono
+ * sempre nella stessa categoria: "puzzle", " Puzzles ", "Puzzle games" → "Puzzle".
+ * Una categoria non standard viene scritta con le iniziali maiuscole: "tower defense" → "Tower Defense".
+ */
+export function normalizeCategory(value) {
+  const clean = String(value || '').replace(/\s+/g, ' ').trim().replace(/\s+games?$/i, '').trim();
+  if (!clean) return 'Other';
+  const key = clean.toLowerCase();
+  const std = CATEGORIES.find(c => {
+    const k = c.toLowerCase();
+    return key === k || key === `${k}s` || key === `${k}es` || key === k.replace(/y$/, 'ies') || `${key}s` === k;
+  });
+  if (std) return std;
+  return clean.split(' ').map(w => (w === w.toLowerCase() ? w.charAt(0).toUpperCase() + w.slice(1) : w)).join(' ');
 }
 
 /** "Puzzle" → "puzzle-games" (indirizzo della pagina di categoria). */

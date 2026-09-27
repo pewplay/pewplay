@@ -29,7 +29,7 @@ import { localGames, githubGames } from './sources.js';
 import { readGameJson, validateGameJson, normalizeGame, findSiteImages, DEFAULT_EXCLUDE } from './game-config.js';
 import { buildGameImages } from './images.js';
 import { renderHome } from './render/home.js';
-import { renderCategory } from './render/category.js';
+import { renderCategory, renderAllCategories } from './render/category.js';
 import { CATEGORIES, categorySlug, categoryInfo } from './strings.js';
 import { renderGame } from './render/game.js';
 import { renderPrivacy, renderNotFound } from './render/privacy.js';
@@ -40,7 +40,7 @@ import { copyFiltered, makeMatcher, writeFile, formatBytes, shortHash, stableRan
 const PAGES_MAX_FILES = 20000;             // limite Cloudflare Pages (piano gratuito)
 const PAGES_MAX_FILE_SIZE = 25 * 1024 * 1024;
 // Nomi che un repo di gioco non può avere: sono pagine del sito (comprese le pagine di categoria)
-const RESERVED_SLUGS = new Set(['assets', 'privacy-policy', 'play', 'img', '404.html', ...CATEGORIES.map(categorySlug)]);
+const RESERVED_SLUGS = new Set(['assets', 'privacy-policy', 'categories', 'play', 'img', '404.html', ...CATEGORIES.map(categorySlug)]);
 
 /** Problema di un singolo gioco: il gioco viene saltato, la build continua. */
 class GameProblem extends Error {}
@@ -170,10 +170,21 @@ async function main() {
     if (!fs.existsSync(path.join(opt.outDir, needed))) warn(`public/${needed} mancante`, 'il sito funziona, ma l\'icona o l\'immagine social non verrà mostrata');
   }
 
-  // Categorie: una pagina per ognuna (/puzzle-games/ …), ordinate per numero di giochi
+  // Categorie: una pagina per ognuna (/puzzle-games/ …), ordinate per numero di giochi.
+  // Raggruppate per indirizzo: due nomi che darebbero la stessa pagina diventano una categoria sola.
   const bySlug = new Map(games.map(g => [g.slug, g]));
-  site.categories = [...new Set(games.map(g => g.category))]
-    .map(name => ({ name, slug: categorySlug(name), ...categoryInfo(name), games: games.filter(g => g.category === name) }))
+  const groups = new Map();
+  for (const g of games) {
+    const slug = categorySlug(g.category);
+    if (!groups.has(slug)) groups.set(slug, { name: g.category, slug, ...categoryInfo(g.category), games: [] });
+    const group = groups.get(slug);
+    if (group.name !== g.category) {
+      warn(`${g.slug}: categoria "${g.category}" unita a "${group.name}"`, `hanno lo stesso indirizzo /${slug}/, scrivi "category": "${group.name}"`);
+      g.category = group.name;
+    }
+    group.games.push(g);
+  }
+  site.categories = [...groups.values()]
     .filter(c => {
       if (!bySlug.has(c.slug)) return true;
       warn(`Pagina categoria ${c.name} non creata`, `esiste già un gioco chiamato "${c.slug}"`);
@@ -187,11 +198,12 @@ async function main() {
   for (const cat of site.categories) {
     writeFile(path.join(opt.outDir, cat.slug, 'index.html'), renderCategory(site, cat));
   }
+  if (site.categories.length) writeFile(path.join(opt.outDir, 'categories', 'index.html'), renderAllCategories(site));
   for (const game of games) {
     writeFile(path.join(opt.outDir, game.slug, 'index.html'), renderGame(site, game, relatedFor(game, games, config.build.relatedGames)));
   }
   writeFile(path.join(opt.outDir, '404.html'), renderNotFound(site, games.slice(0, 6)));
-  info(`   home, privacy, 404, ${site.categories.length} pagin${site.categories.length === 1 ? 'a' : 'e'} categoria + ${games.length} pagin${games.length === 1 ? 'a' : 'e'} gioco`);
+  info(`   home, privacy, 404, elenco categorie, ${site.categories.length} pagin${site.categories.length === 1 ? 'a' : 'e'} categoria + ${games.length} pagin${games.length === 1 ? 'a' : 'e'} gioco`);
 
   // ── 4. File di servizio ──────────────────────────────────
   info('\n[4/5] Sitemap, robots, manifest, header Cloudflare');

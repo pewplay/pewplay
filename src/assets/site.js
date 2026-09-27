@@ -25,7 +25,7 @@
   var search = $('search');
   if (grid && search) {
     var cards = [].slice.call(grid.querySelectorAll('.game-card'));
-    var chips = [].slice.call(document.querySelectorAll('.category-chip'));
+    var chips = [].slice.call(document.querySelectorAll('.category-chip[data-category]'));
     var count = $('result-count');
     var empty = $('no-results');
     var active = 'all';
@@ -50,6 +50,16 @@
         render();
       });
     });
+    // "+N more": mostra o nasconde le categorie con meno giochi
+    var more = $('chips-more');
+    if (more) {
+      more.addEventListener('click', function () {
+        var open = more.getAttribute('aria-expanded') !== 'true';
+        more.setAttribute('aria-expanded', open ? 'true' : 'false');
+        more.textContent = more.getAttribute(open ? 'data-less' : 'data-more');
+        $('category-row').classList.toggle('is-expanded', open);
+      });
+    }
     search.addEventListener('input', function () {
       render();
       var p = new URLSearchParams(location.search);
