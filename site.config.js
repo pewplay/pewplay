@@ -31,7 +31,7 @@ export default {
 
   // Pubblicità e statistiche (attive SOLO sul sito pubblico, mai in preview)
   adsensePublisherId: 'pub-6003231730369215', // '' per disattivare AdSense
-  gaMeasurementId: '',                        // es. 'G-XXXXXXXXXX'; '' = Analytics disattivato
+  gaMeasurementId: 'G-QBZWVSXMXL',                        // es. 'G-XXXXXXXXXX'; '' = Analytics disattivato
 
   // Privacy policy
   privacy: {
