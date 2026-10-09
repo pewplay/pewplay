@@ -88,6 +88,14 @@ export function headersFile(site) {
     '  Referrer-Policy: strict-origin-when-cross-origin',
     ...(site.isPreview ? ['  X-Robots-Tag: noindex, nofollow'] : []),
     '',
+
+    '/:game/play',
+    '  X-Robots-Tag: noindex',
+    '',
+    '/:game/play/*',
+    '  X-Robots-Tag: noindex',
+    '',
+
     '/assets/*',
     '  Cache-Control: public, max-age=31536000, immutable',
     '',
