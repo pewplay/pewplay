@@ -1,0 +1,4 @@
+# PewPlay - redirect permanenti delle icone rinominate
+/icon-48.png /favicon-48x48.png 301
+/icon-32.png /favicon-32x32.png 301
+/icon-192.png /android-chrome-192x192.png 301
