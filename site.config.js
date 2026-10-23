@@ -12,6 +12,7 @@ export default {
   previewUrl: 'https://preview.pewplay.pages.dev',     // sito di anteprima (branch preview)
   themeColor: '#6C5CE7',
   contactEmail: 'contact@pewplay.com',
+  termsUpdated: '2026-10-23', // data dell'ultima revisione delle condizioni d'uso
 
   // Testi principali (home, link condivisi, manifest)
   tagline: 'Free Online Games',

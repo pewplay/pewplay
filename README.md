@@ -209,7 +209,7 @@ dist/
 
 ## Privacy
 
-Le pagine `/about/`, `/contact/` e `/terms-of-service/` sono generate da `src/render/site-pages.js`; i link sono nel footer e le pagine informative vengono incluse nella sitemap. La pagina `/privacy-policy/` si configura in `site.config.js → privacy`. Prima della pubblicazione, verifica che le informazioni di contatto siano corrette e fai rivedere le condizioni legali per la tua attività e giurisdizione. Il banner di consenso è quello di Google (AdSense → *Privacy & messaging*). Sostituisci titolare e indirizzo con quelli reali e verifica il testo per la tua situazione.
+Le pagine `/about/`, `/contact/` e `/terms-of-service/` sono generate da `src/render/site-pages.js`; i link sono nel footer e le pagine informative vengono incluse nella sitemap. Le condizioni d'uso sono state adattate all'attuale PewPlay: catalogo gratuito di giochi HTML5, nessun account o pagamento, pubblicità AdSense, repository e licenze dei singoli giochi, uso consentito e segnalazioni di contenuti. La pagina `/privacy-policy/` si configura in `site.config.js → privacy`. Prima del deploy pubblico, completa le informazioni dell'operatore con il nome legale effettivo e l'indirizzo postale: sono dati fattuali che non si possono dedurre in modo affidabile dal codice e non devono essere inventati. Il banner di consenso è gestito da Google AdSense → *Privacy & messaging*.
 
 ## Licenza
 
