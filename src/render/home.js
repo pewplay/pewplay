@@ -60,7 +60,7 @@ export function renderHome(site, games) {
       </div>
       ${games.length ? `<div class="category-row" id="category-row" role="group" aria-label="${esc(T.filterLabel)}">${chips}</div>` : ''}
       <div class="grid" id="grid">
-        ${games.map((g, i) => gameCard(g, { lazy: i > 9, filterable: true })).join('')}
+        ${games.map((g, i) => gameCard(g, { lazy: i > 4, filterable: true })).join('')}
         ${games.length
     ? `<div class="no-results" id="no-results" hidden><strong>${esc(T.noResults)}</strong>${esc(T.tryAnother)}</div>`
     : `<div class="no-results"><strong>${esc(T.emptyTitle)}</strong>${esc(T.emptyText)}</div>`}

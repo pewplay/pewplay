@@ -115,7 +115,7 @@ export function header(site, { variant = 'site', gameTitle = '', hasHelp = false
   const fs = variant === 'game'
     ? `<button class="header-btn" type="button" id="fs-btn" aria-label="${esc(s.fullscreen)}" title="${esc(s.fullscreen)}" data-label-enter="${esc(s.fullscreen)}" data-label-exit="${esc(s.exitFullscreen)}">${ICONS.fsEnter}${ICONS.fsExit}</button>`
     : '';
-  return `<header class="site-header">
+  return `<header class="site-header site-header--${variant}">
     <div class="header-inner">
         ${left}
         ${site.isPreview ? `<span class="preview-pill" title="${esc(s.previewNotice)}">${esc(s.previewBadge)}</span>` : ''}
