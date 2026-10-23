@@ -281,3 +281,177 @@ a.tag:hover{border-color:var(--accent)}
 }
 
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+
+/* ── Mobile usability / AdSense review ──
+   The shared layout already supplies a mobile viewport. These rules make
+   essential controls at least 48×48 CSS px and improve readable text on phones.
+   Small decorative metadata remains secondary so cards and game controls stay usable. */
+@media (max-width: 767px) {
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { font-size: 16px; }
+
+  /* Main header actions: theme, back, help, share and fullscreen. */
+  .header-btn,
+  .site-header--site #theme-toggle,
+  .site-header--game .header-btn {
+    min-width: 48px;
+    width: 48px;
+    min-height: 48px;
+    height: 48px;
+    padding: 0;
+    flex: 0 0 48px;
+    font-size: 16px;
+  }
+  .logo { min-height: 48px; padding-top: 8px; padding-bottom: 8px; }
+  .header-game-title { font-size: 16px; }
+  .preview-pill, .preview-bar { font-size: 16px; line-height: 1.45; }
+
+  /* Search and category filtering. */
+  .eyebrow, .hero p { font-size: 16px; }
+  .search-box input { min-height: 54px; font-size: 16px; }
+  .library-head p { font-size: 16px; }
+  .category-chip {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+  .game-card__name {
+    font-size: 16px;
+    line-height: 1.35;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .game-card__category { font-size: 16px; }
+  .badge { font-size: 16px; padding: 5px 9px; }
+  .no-results { font-size: 16px; }
+
+  /* Discrete navigation links need a generous finger target. */
+  .skip-link { min-height: 48px; display: inline-flex; align-items: center; }
+  .footer__copy { font-size: 16px; }
+  .footer__links { gap: 4px 8px; }
+  .footer__links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 8px 6px;
+    font-size: 16px;
+  }
+  .breadcrumb ol { gap: 4px; font-size: 16px; }
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 4px 2px;
+  }
+  .shelf__more {
+    min-height: 48px;
+    padding: 8px 0;
+    font-size: 16px;
+  }
+  .pill { min-width: 48px; min-height: 48px; padding: 12px 14px; font-size: 16px; }
+  .cat-tile { min-height: 112px; }
+  .cat-tile__name { font-size: 16px; }
+  .cat-tile__count { font-size: 16px; }
+  .page-count { font-size: 16px; }
+  .toast { font-size: 16px; }
+
+  /* Game page: keep player controls reachable and explanatory text readable. */
+  :root { --bar-h: 52px; }
+  .game-bar { min-height: 52px; }
+  .game-bar__title { font-size: 16px; }
+  .game-bar__more {
+    min-height: 48px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+  .game-info h1 { font-size: 24px; }
+  .game-desc { font-size: 16px; }
+  .game-section p,
+  .modal__body p,
+  .tips,
+  .controls dd,
+  .faq summary { font-size: 16px; }
+  .faq summary { min-height: 48px; align-items: center; padding: 12px 0; }
+  .controls kbd { font-size: 16px; }
+  .game-byline { font-size: 16px; }
+  .play-btn { min-height: 48px; font-size: 16px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; font-size: 16px; }
+  .game-meta a.tag { min-height: 48px; padding: 12px 14px; font-size: 16px; }
+
+  /* Policy and contact pages contain longer copy and should not shrink on phones. */
+  .policy-wrap { padding-left: 16px; padding-right: 16px; }
+  .policy-card p,
+  .policy-card li,
+  .notice { font-size: 16px; }
+  .policy-kicker, .policy-meta { font-size: 16px; }
+  .policy-card code { font-size: 16px; }
+  .tag { font-size: 16px; }
+  .facade__loading, .rotate-hint, .modal__body h3 { font-size: 16px; }
+}
+
+/* Compact game header: keep the controls easy to tap without oversized chrome. */
+@media (max-width: 767px) {
+  :root { --header-h: 56px; --bar-h: 48px; }
+
+  .site-header--game .header-inner {
+    padding-left: 12px;
+    padding-right: 12px;
+    gap: 8px;
+  }
+
+  /* The visible control is 40px; the transparent pseudo-element preserves a
+     48px touch target in both directions without widening the whole header. */
+  .site-header--game .header-btn {
+    position: relative;
+    min-width: 40px;
+    width: 40px;
+    min-height: 40px;
+    height: 40px;
+    padding: 0;
+    flex: 0 0 40px;
+    font-size: 14px;
+  }
+  .site-header--game .header-btn::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    background: transparent;
+  }
+  .site-header--game .header-btn svg {
+    width: 17px;
+    height: 17px;
+    pointer-events: none;
+  }
+  .site-header--game .header-game-title {
+    font-size: 14px;
+    line-height: 1.2;
+  }
+
+  /* The player toolbar is also shorter; its action retains a 48px touch area. */
+  .game-bar {
+    min-height: 48px;
+    padding-left: 12px;
+    padding-right: 12px;
+    gap: 8px;
+  }
+  .game-bar__title { font-size: 14px; }
+  .game-bar__more {
+    position: relative;
+    min-height: 40px;
+    padding: 7px 10px;
+    font-size: 14px;
+  }
+  .game-bar__more::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    background: transparent;
+  }
+}

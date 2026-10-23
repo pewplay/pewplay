@@ -61,7 +61,7 @@ export function layout(site, p) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${esc(p.title)}</title>
   <script>try{var t=localStorage.getItem('pewplay-theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
   ${site.fontPreload ? `<link rel="preload" href="${site.fontPreload}" as="font" type="font/woff2" crossorigin>` : ''}
