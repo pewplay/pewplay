@@ -194,7 +194,7 @@ dist/
 ├── <gioco>/img/…                      preview, copertina e screenshot (AVIF/WebP)
 ├── <gioco>/og.jpg                     immagine per i link condivisi
 ├── <categoria>-games/index.html       pagine di categoria
-├── privacy-policy/, 404.html
+├── about/, contact/, terms-of-service/, privacy-policy/, 404.html
 ├── assets/site.<hash>.css|js          cache lunga
 ├── sitemap.xml, robots.txt, ads.txt, manifest.json   (sitemap e ads.txt solo sul pubblico)
 ├── service-worker.js                  solo sul pubblico: disattiva il service worker della vecchia versione del sito
@@ -209,7 +209,7 @@ dist/
 
 ## Privacy
 
-La pagina `/privacy-policy/` si configura in `site.config.js → privacy`. Il banner di consenso è quello di Google (AdSense → *Privacy & messaging*). Sostituisci titolare e indirizzo con quelli reali e verifica il testo per la tua situazione.
+Le pagine `/about/`, `/contact/` e `/terms-of-service/` sono generate da `src/render/site-pages.js`; i link sono nel footer e le pagine informative vengono incluse nella sitemap. La pagina `/privacy-policy/` si configura in `site.config.js → privacy`. Prima della pubblicazione, verifica che le informazioni di contatto siano corrette e fai rivedere le condizioni legali per la tua attività e giurisdizione. Il banner di consenso è quello di Google (AdSense → *Privacy & messaging*). Sostituisci titolare e indirizzo con quelli reali e verifica il testo per la tua situazione.
 
 ## Licenza
 

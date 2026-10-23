@@ -60,6 +60,8 @@ export const T = {
   categoryTitle: label => `Free ${label} – Play Online, No Download`,
   defaultDescription: name => `Play ${name} for free online — no download needed.`,
   privacy: 'Privacy & Cookies',
+  aboutPage: 'About',
+  terms: 'Terms of Service',
   contact: 'Contact',
   footerText: 'Free browser games.<br>No downloads. Just play.',
   rotate: 'Rotate your device for the best experience',

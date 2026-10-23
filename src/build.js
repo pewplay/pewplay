@@ -33,6 +33,7 @@ import { renderCategory, renderAllCategories } from './render/category.js';
 import { CATEGORIES, categorySlug, categoryInfo } from './strings.js';
 import { renderGame } from './render/game.js';
 import { renderPrivacy, renderNotFound } from './render/privacy.js';
+import { renderAbout, renderContact, renderTerms } from './render/site-pages.js';
 import * as files from './static-files.js';
 import { BuildError, info, warn, collectedWarnings, printFatal, summary } from './report.js';
 import { copyFiltered, makeMatcher, writeFile, formatBytes, shortHash, stableRandom, mapLimit, walkFiles, run } from './util.js';
@@ -40,7 +41,7 @@ import { copyFiltered, makeMatcher, writeFile, formatBytes, shortHash, stableRan
 const PAGES_MAX_FILES = 20000;             // limite Cloudflare Pages (piano gratuito)
 const PAGES_MAX_FILE_SIZE = 25 * 1024 * 1024;
 // Nomi che un repo di gioco non può avere: sono pagine del sito (comprese le pagine di categoria)
-const RESERVED_SLUGS = new Set(['assets', 'privacy-policy', 'categories', 'play', 'img', '404.html', ...CATEGORIES.map(categorySlug)]);
+const RESERVED_SLUGS = new Set(['assets', 'privacy-policy', 'about', 'contact', 'terms-of-service', 'categories', 'play', 'img', '404.html', ...CATEGORIES.map(categorySlug)]);
 
 /** Problema di un singolo gioco: il gioco viene saltato, la build continua. */
 class GameProblem extends Error {}
@@ -195,6 +196,9 @@ async function main() {
 
   writeFile(path.join(opt.outDir, 'index.html'), renderHome(site, games));
   writeFile(path.join(opt.outDir, 'privacy-policy', 'index.html'), renderPrivacy(site));
+  writeFile(path.join(opt.outDir, 'about', 'index.html'), renderAbout(site));
+  writeFile(path.join(opt.outDir, 'contact', 'index.html'), renderContact(site));
+  writeFile(path.join(opt.outDir, 'terms-of-service', 'index.html'), renderTerms(site));
   for (const cat of site.categories) {
     writeFile(path.join(opt.outDir, cat.slug, 'index.html'), renderCategory(site, cat));
   }
@@ -203,7 +207,7 @@ async function main() {
     writeFile(path.join(opt.outDir, game.slug, 'index.html'), renderGame(site, game, relatedFor(game, games, config.build.relatedGames)));
   }
   writeFile(path.join(opt.outDir, '404.html'), renderNotFound(site, games.slice(0, 6)));
-  info(`   home, privacy, 404, elenco categorie, ${site.categories.length} pagin${site.categories.length === 1 ? 'a' : 'e'} categoria + ${games.length} pagin${games.length === 1 ? 'a' : 'e'} gioco`);
+  info(`   home, about, contact, terms, privacy, 404, elenco categorie, ${site.categories.length} pagin${site.categories.length === 1 ? 'a' : 'e'} categoria + ${games.length} pagin${games.length === 1 ? 'a' : 'e'} gioco`);
 
   // ── 4. File di servizio ──────────────────────────────────
   info('\n[4/5] Sitemap, robots, manifest, header Cloudflare');

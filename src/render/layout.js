@@ -146,8 +146,10 @@ export function footer(site) {
         ${cats ? `<nav class="footer__links footer__cats" aria-label="${esc(s.categoriesLabel)}">${cats}</nav>` : ''}
         <nav class="footer__links" aria-label="Site">
           <a href="/">${esc(s.home)}</a>
+          <a href="/about/">${esc(s.aboutPage)}</a>
+          <a href="/contact/">${esc(s.contact)}</a>
+          <a href="/terms-of-service/">${esc(s.terms)}</a>
           <a href="/privacy-policy/">${esc(s.privacy)}</a>
-          <a href="mailto:${esc(c.contactEmail)}">${esc(s.contact)}</a>
           <a href="https://github.com/${esc(c.github.org)}" rel="noopener noreferrer">GitHub</a>
           <span class="footer__copy">© ${new Date().getFullYear()} ${esc(c.name)}</span>
         </nav>
