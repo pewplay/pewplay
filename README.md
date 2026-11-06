@@ -16,7 +16,7 @@ Vale per **tutti** i repo, sia `pewplay` (il sito) sia i giochi:
 - Lavori sempre su `preview`, controlli l'anteprima, poi fai il **merge in `main`** → si aggiorna il sito pubblico.
 - **Tutto automatico**: ogni push su `main` o `preview` (del sito o di un gioco) ricostruisce e pubblica il sito corrispondente in 1–2 minuti. Il merge `preview` → `main` è un push su `main`, quindi aggiorna la produzione da solo.
 - Ogni notte parte un controllo su entrambi i siti: pubblica **solo se qualcosa è cambiato** (es. un badge "New" scaduto). Se il sito online è già identico, il deploy viene saltato. Dal pulsante manuale invece pubblica sempre.
-- Dopo ogni deploy (e ogni notte) i **vecchi deploy vengono cancellati** da Cloudflare: restano solo gli ultimi 3 di produzione e gli ultimi 3 di anteprima (`site.config.js → cloudflare.keepDeployments`). Il deploy online non viene mai cancellato.
+- Alla fine di ogni run (e ogni notte) i **vecchi deploy vengono cancellati** da Cloudflare: restano solo gli ultimi 3 di produzione e gli ultimi 3 di anteprima (`site.config.js → cloudflare.keepDeployments`). Il deploy online non viene mai cancellato.
 - Pubblica **solo GitHub Actions**: il progetto Pages non deve essere collegato al repo da Cloudflare (vedi Configurazione iniziale), altrimenti ogni push viene pubblicato due volte.
 
 ```
@@ -84,6 +84,7 @@ npm run deploy:preview             # build + deploy dell'anteprima dal tuo PC
 npm run deploy:check               # controlla solo token Cloudflare, account e progetto
 npm run cleanup:dry                # mostra quali vecchi deploy verrebbero cancellati
 npm run cleanup                    # cancella i vecchi deploy (tiene gli ultimi 3 + 3)
+npm run cleanup -- --target preview   # solo anteprima (o production)
 ```
 
 Per la build da GitHub in locale conviene un token (`cp .env.example .env` e compila `GH_TOKEN`), altrimenti si finisce presto nel limite di 60 richieste/ora dell'API.
@@ -92,16 +93,11 @@ Opzioni di `src/build.js`: `--target production|preview`, `--games <cartella>`, 
 
 ## package-lock.json
 
-`package-lock.json` blocca le versioni esatte delle dipendenze (sharp, wrangler…): ogni build usa le stesse e la cache funziona. Per crearlo o aggiornarlo:
-
-- **da GitHub**: *Actions → Crea package-lock → Run workflow*, scegliendo il branch (prima `preview`, poi fai il merge in `main`). Fa il commit da solo;
-- **dal PC**: `npm install` e poi commit di `package-lock.json`.
-
-Rifallo quando cambi le dipendenze in `package.json`.
+`package-lock.json` blocca le versioni esatte delle dipendenze (sharp, wrangler…): ogni build usa le stesse e la cache funziona. Non serve fare niente: se manca, o non corrisponde più a `package.json`, la run di deploy lo crea e lo committa da sola sul branch del sito (`main` o `preview`).
 
 ## Lanciare la build a mano
 
-Repo `pewplay` → **Actions → Deploy → Run workflow** → *entrambi*, *production* o *preview*. Nel riepilogo della run c'è la tabella dei giochi con versione, peso ed eventuali errori/avvisi.
+Repo `pewplay` → **Actions → Deploy → Run workflow** → *entrambi*, *production*, *preview* oppure *solo pulizia* (cancella i vecchi deploy senza ripubblicare niente). Nel riepilogo della run c'è la tabella dei giochi con versione, peso ed eventuali errori/avvisi.
 
 ## Come vengono gestiti i problemi
 

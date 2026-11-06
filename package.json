@@ -13,8 +13,8 @@
     "deploy": "npm run build && node src/deploy.js --target production",
     "deploy:preview": "npm run build:preview && node src/deploy.js --target preview",
     "deploy:check": "node src/deploy.js --check",
-    "cleanup": "node src/cleanup.js --target production && node src/cleanup.js --target preview",
-    "cleanup:dry": "node src/cleanup.js --target production --dry-run && node src/cleanup.js --target preview --dry-run"
+    "cleanup": "node src/cleanup.js",
+    "cleanup:dry": "node src/cleanup.js --dry-run"
   },
   "dependencies": {
     "sharp": "^0.34.0",

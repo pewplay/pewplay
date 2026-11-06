@@ -8,9 +8,10 @@
 #   - push su main / preview di un gioco         → idem (il gioco avvisa questo repo)
 #   - ogni notte                                 → entrambi, ma pubblica solo se qualcosa è cambiato
 #
-# Dopo ogni deploy (anche quando viene saltato perché non serve) cancella i vecchi deploy
-# su Cloudflare e tiene solo gli ultimi (site.config.js → cloudflare.keepDeployments).
-#   - a mano: Actions → Deploy → Run workflow    → scegli tu cosa ricostruire
+# Alla fine di ogni run cancella i vecchi deploy su Cloudflare, sia di produzione sia di
+# anteprima, e tiene solo gli ultimi (site.config.js → cloudflare.keepDeployments).
+# Se manca package-lock.json la run lo crea e lo committa da sola sul branch del sito.
+#   - a mano: Actions → Deploy → Run workflow    → scegli tu cosa ricostruire (o "solo pulizia")
 #
 # Secrets richiesti (Settings → Secrets and variables → Actions):
 #   CLOUDFLARE_API_TOKEN   token Cloudflare con permesso "Account → Cloudflare Pages → Edit"
@@ -41,7 +42,7 @@ on:
       target:
         description: 'Cosa ricostruire'
         type: choice
-        options: [entrambi, production, preview]
+        options: [entrambi, production, preview, solo pulizia]
         default: entrambi
 
 permissions:
@@ -68,7 +69,7 @@ jobs:
           case "$EVENT" in
             push)                want="$PUSH_BRANCH" ;;
             repository_dispatch) echo "Aggiornato il gioco $GAME (branch $GAME_BRANCH)"; want="$GAME_BRANCH" ;;
-            workflow_dispatch)   case "$INPUT" in production) want=main ;; preview) want=preview ;; *) want="main preview" ;; esac ;;
+            workflow_dispatch)   case "$INPUT" in production) want=main ;; preview) want=preview ;; "solo pulizia") want="" ;; *) want="main preview" ;; esac ;;
             *)                   want="main preview" ;;
           esac
 
@@ -107,6 +108,8 @@ jobs:
     concurrency:
       group: deploy-${{ matrix.target }}
       cancel-in-progress: false
+    permissions:
+      contents: write   # solo per committare package-lock.json se manca
     steps:
       - uses: actions/checkout@v5
         with:
@@ -123,15 +126,35 @@ jobs:
           path: node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
 
-      # Con package-lock.json installa sempre le stesse versioni (npm ci); senza, usa npm install
+      # Con package-lock.json installa sempre le stesse versioni (npm ci).
+      # Se manca (o non corrisponde più a package.json) lo crea con npm install.
       - name: Installa dipendenze
+        id: deps
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            echo "::warning title=Manca package-lock.json::Lancia una volta Actions → Crea package-lock → Run workflow (vedi README)."
-            npm install --no-audit --no-fund
+          if [ -f package-lock.json ] && npm ci --no-audit --no-fund; then
+            exit 0
           fi
+          echo "Creo/aggiorno package-lock.json"
+          npm install --no-audit --no-fund
+          echo "lock=changed" >> "$GITHUB_OUTPUT"
+
+      # Committa il package-lock.json appena creato sul branch del sito (main o preview).
+      # Il commit fatto da GitHub Actions non fa ripartire il deploy. Se non riesce, ci riprova alla run dopo.
+      - name: Salva package-lock.json nel repo
+        if: steps.deps.outputs.lock == 'changed'
+        continue-on-error: true
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ matrix.ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then echo "package-lock.json già aggiornato"; exit 0; fi
+          git commit -m "Aggiorna package-lock.json"
+          git push "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/${REF}"
+          echo "**package-lock.json** creato e salvato su \`${REF}\`." >> "$GITHUB_STEP_SUMMARY"
 
       # I giochi scaricati restano in cache: vengono riscaricati solo quelli con nuovi commit
       - name: Cache giochi
@@ -154,11 +177,32 @@ jobs:
         # Salta il deploy se online c'è già la stessa versione; se lo lanci a mano pubblica sempre.
         run: node src/deploy.js --target ${{ matrix.target }} ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
 
-      # Tiene su Cloudflare solo gli ultimi deploy (site.config.js → cloudflare.keepDeployments).
-      # Se la pulizia non riesce il deploy resta valido: ci riprova alla run successiva.
+  # Alla fine di OGNI run (anche se un deploy è fallito o è stato saltato) cancella i vecchi
+  # deploy di produzione E di anteprima e tiene solo gli ultimi (site.config.js → cloudflare.keepDeployments).
+  # Il deploy online e quelli in corso non vengono mai toccati. Se non riesce, ci riprova alla run dopo.
+  cleanup:
+    name: Cancella i vecchi deploy
+    needs: [plan, deploy]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: cleanup
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            src
+            site.config.js
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
       - name: Cancella i vecchi deploy da Cloudflare
-        continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: node src/cleanup.js --target ${{ matrix.target }}
+        run: node src/cleanup.js

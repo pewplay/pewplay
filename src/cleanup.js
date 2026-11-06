@@ -1,31 +1,39 @@
 #!/usr/bin/env node
 // Cancella i vecchi deploy da Cloudflare Pages, così la lista non cresce all'infinito.
-//   node src/cleanup.js --target production   → tiene gli ultimi N deploy di produzione
-//   node src/cleanup.js --target preview      → tiene gli ultimi N deploy di anteprima
-//   node src/cleanup.js --target … --dry-run  → mostra solo cosa cancellerebbe
+//   node src/cleanup.js                       → pulisce produzione E anteprima
+//   node src/cleanup.js --target production   → solo produzione
+//   node src/cleanup.js --target preview      → solo anteprima
+//   node src/cleanup.js --dry-run             → mostra solo cosa cancellerebbe
 //
 // Quanti tenerne: site.config.js → cloudflare.keepDeployments (default 3 + 3).
 // Non vengono mai cancellati:
 //   - il deploy attualmente online in produzione (www.pewplay.com);
 //   - l'ultimo deploy riuscito del branch di anteprima (quello di preview.<progetto>.pages.dev);
 //   - i deploy ancora in corso.
+// Lavora a giri: legge l'elenco, cancella, rilegge… finché non resta niente da cancellare
+// (così funziona anche con centinaia di deploy arretrati).
 // Servono CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID, gli stessi del deploy.
 // Nota: cancellare un deploy NON restituisce deploy al limite mensile del piano gratuito.
 import { loadOptions, parseArgs } from './config.js';
 import { BuildError, info, warn, printFatal, summary } from './report.js';
 
 const DEFAULT_KEEP = { production: 3, preview: 3 };
+const MAX_ROUNDS = 20;
+const FINAL = ['success', 'failure', 'canceled', 'skipped'];
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 async function main() {
-  const opt = await loadOptions();
   const args = parseArgs(process.argv.slice(2));
+  const target = args.target && args.target !== true ? String(args.target) : 'all';
+  if (!['all', 'production', 'preview'].includes(target)) {
+    throw new BuildError(`--target deve essere "production", "preview" o "all" (ricevuto "${target}")`);
+  }
+  const envs = target === 'all' ? ['production', 'preview'] : [target];
+  const opt = await loadOptions(['--target', envs[0]]); // serve solo per leggere site.config.js e .env
   const dryRun = !!args['dry-run'];
-  const env = opt.target; // "production" | "preview": coincide con l'ambiente di Cloudflare
   const project = opt.config.cloudflare.pagesProject;
   const previewBranch = opt.config.github.previewBranch;
   const keepCfg = { ...DEFAULT_KEEP, ...(opt.config.cloudflare.keepDeployments || {}) };
-  const keep = Math.max(1, Number.parseInt(keepCfg[env], 10) || DEFAULT_KEEP[env]);
   const token = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
   const accountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
 
@@ -33,7 +41,7 @@ async function main() {
     throw new BuildError('Mancano CLOUDFLARE_API_TOKEN e/o CLOUDFLARE_ACCOUNT_ID (vedi README → Configurazione iniziale).');
   }
 
-  // Chiamata all'API con un paio di tentativi in caso di limite di richieste (429) o errori temporanei (5xx)
+  // Chiamata all'API con qualche tentativo in caso di limite di richieste (429) o errori temporanei (5xx)
   async function cf(method, apiPath) {
     for (let attempt = 1; ; attempt++) {
       let res;
@@ -44,7 +52,7 @@ async function main() {
         });
       } catch (e) {
         if (attempt < 3) { await sleep(3000 * attempt); continue; }
-        throw new BuildError(`Cloudflare non è raggiungibile (${e.cause?.code || e.message}).`, ['Problema di rete temporaneo: la pulizia verrà ritentata al prossimo deploy.']);
+        throw new BuildError(`Cloudflare non è raggiungibile (${e.cause?.code || e.message}).`, ['Problema di rete temporaneo: la pulizia verrà ritentata alla prossima run.']);
       }
       if ((res.status === 429 || res.status >= 500) && attempt < 4) {
         await sleep((Number(res.headers.get('retry-after')) || 5 * attempt) * 1000);
@@ -63,7 +71,7 @@ async function main() {
 
   const base = `/accounts/${accountId}/pages/projects/${project}`;
 
-  // ── 1. Progetto: quale deploy è online in produzione ──────
+  // ── Progetto: quale deploy è online in produzione ─────────
   const proj = await cf('GET', base);
   if (!proj.ok) {
     if (proj.status === 404) { info(`Progetto "${project}" non trovato su Cloudflare: niente da pulire.`); return; }
@@ -74,64 +82,80 @@ async function main() {
   }
   const liveProductionId = proj.result?.canonical_deployment?.id || null;
 
-  // ── 2. Tutti i deploy dell'ambiente ───────────────────────
-  const all = [];
-  for (let page = 1; page <= 1000; page++) {
-    const r = await cf('GET', `${base}/deployments?env=${env}&page=${page}&per_page=25`);
-    if (!r.ok) throw new BuildError(`Non riesco a leggere l'elenco dei deploy (HTTP ${r.status}).`, [`Dettagli: ${r.errors}`]);
-    const items = r.result || [];
-    all.push(...items);
-    const totalPages = r.resultInfo?.total_pages;
-    if (!items.length || (totalPages && page >= totalPages)) break;
+  // Legge l'elenco dei deploy di un ambiente, pagina per pagina, dal più recente
+  async function listDeployments(env) {
+    const seen = new Map();
+    for (let page = 1; page <= 200; page++) {
+      const r = await cf('GET', `${base}/deployments?env=${env}&page=${page}&per_page=25`);
+      if (!r.ok) {
+        // Alcune pagine oltre la fine danno errore invece di una lista vuota: si tiene quanto letto
+        if (seen.size) break;
+        throw new BuildError(`Non riesco a leggere l'elenco dei deploy ${env} (HTTP ${r.status}).`, [`Dettagli: ${r.errors}`]);
+      }
+      const items = r.result || [];
+      const before = seen.size;
+      for (const d of items) seen.set(d.id, d);
+      const totalPages = r.resultInfo?.total_pages;
+      if (!items.length || seen.size === before || (totalPages && page >= totalPages)) break;
+    }
+    return [...seen.values()]
+      .filter(d => d.environment === env) // per sicurezza: solo l'ambiente richiesto
+      .sort((a, b) => new Date(b.created_on) - new Date(a.created_on));
   }
-  // Per sicurezza filtra anche qui: tiene solo l'ambiente richiesto
-  const deployments = all
-    .filter(d => d.environment === env)
-    .sort((a, b) => new Date(b.created_on) - new Date(a.created_on)); // dal più recente
 
-  // ── 3. Cosa tenere ────────────────────────────────────────
   const branchOf = d => d.deployment_trigger?.metadata?.branch || '';
-  const statusOf = d => d.latest_stage?.status || '';
-  const protectedIds = new Set();
-  if (liveProductionId) protectedIds.add(liveProductionId);
-  if (env === 'preview') {
-    const livePreview = deployments.find(d => branchOf(d) === previewBranch && statusOf(d) === 'success');
-    if (livePreview) protectedIds.add(livePreview.id);
-  }
+  const statusOf = d => d.latest_stage?.status || 'success';
 
-  const keepIds = new Set(deployments.slice(0, keep).map(d => d.id));
-  const toDelete = deployments.filter(d =>
-    !keepIds.has(d.id) &&
-    !protectedIds.has(d.id) &&
-    ['success', 'failure', 'canceled', 'skipped'].includes(statusOf(d) || 'success'), // mai quelli in corso
-  );
+  for (const env of envs) {
+    const keep = Math.max(1, Number.parseInt(keepCfg[env], 10) || DEFAULT_KEEP[env]);
+    let deleted = 0;
+    let remaining = 0;
+    let lastFailures = [];
+    const failedIds = new Set();
 
-  info(`\nPulizia deploy ${env} del progetto "${project}": ${deployments.length} trovati, ne tengo ${deployments.length - toDelete.length}, da cancellare ${toDelete.length}${dryRun ? ' (prova: non cancello niente)' : ''}`);
-  if (!toDelete.length) {
-    summary(`\n**Pulizia deploy ${env}**: niente da cancellare (${deployments.length} deploy, limite ${keep}).\n`);
-    return;
-  }
-  if (dryRun) {
-    for (const d of toDelete) info(`   -  ${d.short_id || d.id}  ${d.created_on}  ${branchOf(d)}`);
-    return;
-  }
+    info(`\nPulizia deploy ${env} del progetto "${project}" (tengo gli ultimi ${keep})${dryRun ? ' — PROVA: non cancello niente' : ''}`);
 
-  // ── 4. Cancellazione ──────────────────────────────────────
-  // force=true serve per i deploy che hanno ancora un alias (es. vecchi branch).
-  let deleted = 0;
-  const failed = [];
-  for (const d of toDelete) {
-    const r = await cf('DELETE', `${base}/deployments/${d.id}?force=true`);
-    if (r.ok) deleted++;
-    else failed.push(`${d.short_id || d.id} (HTTP ${r.status}${r.errors ? `: ${r.errors}` : ''})`);
-    if (deleted && deleted % 50 === 0) info(`   ..  ${deleted}/${toDelete.length} cancellati`);
-  }
+    for (let round = 1; round <= MAX_ROUNDS; round++) {
+      const deployments = await listDeployments(env);
+      const protectedIds = new Set(liveProductionId ? [liveProductionId] : []);
+      if (env === 'preview') {
+        const livePreview = deployments.find(d => branchOf(d) === previewBranch && statusOf(d) === 'success');
+        if (livePreview) protectedIds.add(livePreview.id);
+      }
+      const keepIds = new Set(deployments.slice(0, keep).map(d => d.id));
+      const toDelete = deployments.filter(d =>
+        !keepIds.has(d.id) && !protectedIds.has(d.id) && !failedIds.has(d.id) && FINAL.includes(statusOf(d)));
+      remaining = deployments.length;
 
-  info(`   OK  cancellati ${deleted} vecchi deploy ${env}`);
-  if (failed.length) {
-    warn('Alcuni vecchi deploy non sono stati cancellati', `${failed.length}: ${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '…' : ''} (verranno ritentati al prossimo deploy)`);
+      if (round === 1) info(`   ..  trovati ${deployments.length} deploy`);
+      if (!toDelete.length) break;
+
+      if (dryRun) {
+        for (const d of toDelete) info(`   -  ${d.short_id || d.id}  ${d.created_on}  ${branchOf(d)}`);
+        info(`   ..  ne cancellerei ${toDelete.length} (letti in un solo giro: con molti deploy potrebbero essere di più)`);
+        break;
+      }
+
+      let deletedThisRound = 0;
+      lastFailures = [];
+      for (const d of toDelete) {
+        // force=true serve per i deploy che hanno ancora un alias (es. vecchi branch)
+        const r = await cf('DELETE', `${base}/deployments/${d.id}?force=true`);
+        if (r.ok) { deleted++; deletedThisRound++; }
+        else { failedIds.add(d.id); lastFailures.push(`${d.short_id || d.id} (HTTP ${r.status}${r.errors ? `: ${r.errors}` : ''})`); }
+        if (deleted && deleted % 50 === 0 && r.ok) info(`   ..  ${deleted} cancellati finora`);
+      }
+      remaining -= deletedThisRound;
+      if (!deletedThisRound) break; // tutti rifiutati: inutile insistere
+    }
+
+    if (dryRun) continue;
+    info(`   OK  cancellati ${deleted} vecchi deploy ${env}, ne restano ${remaining}`);
+    if (failedIds.size) {
+      warn(`Alcuni vecchi deploy ${env} non sono stati cancellati`, `${failedIds.size}: ${lastFailures.slice(0, 5).join(', ')}${failedIds.size > 5 ? '…' : ''} (verranno ritentati alla prossima run)`);
+    }
+    summary(`\n**Pulizia deploy ${env}**: cancellati ${deleted} vecchi deploy, ne restano ${remaining} (limite ${keep})${failedIds.size ? `, ${failedIds.size} non cancellati` : ''}.\n`);
   }
-  summary(`\n**Pulizia deploy ${env}**: cancellati ${deleted} vecchi deploy, tenuti gli ultimi ${keep}${failed.length ? ` (${failed.length} non cancellati)` : ''}.\n`);
 }
 
 main().catch(e => process.exit(printFatal(e)));
