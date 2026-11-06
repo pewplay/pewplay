@@ -9,7 +9,8 @@
 // Non vengono mai cancellati:
 //   - il deploy attualmente online in produzione (www.pewplay.com);
 //   - l'ultimo deploy riuscito del branch di anteprima (quello di preview.<progetto>.pages.dev);
-//   - i deploy ancora in corso.
+//   - i deploy ancora in corso (creati nell'ultima ora e non ancora finiti).
+//     Quelli più vecchi rimasti "in corso" o "in attesa" sono bloccati e vengono cancellati.
 // Lavora a giri: legge l'elenco, cancella, rilegge… finché non resta niente da cancellare
 // (così funziona anche con centinaia di deploy arretrati).
 // Servono CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID, gli stessi del deploy.
@@ -20,6 +21,7 @@ import { BuildError, info, warn, printFatal, summary } from './report.js';
 const DEFAULT_KEEP = { production: 3, preview: 3 };
 const MAX_ROUNDS = 20;
 const FINAL = ['success', 'failure', 'canceled', 'skipped'];
+const IN_PROGRESS_GRACE_MS = 60 * 60 * 1000; // un deploy "in corso" da più di un'ora è bloccato
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 async function main() {
@@ -105,6 +107,7 @@ async function main() {
 
   const branchOf = d => d.deployment_trigger?.metadata?.branch || '';
   const statusOf = d => d.latest_stage?.status || 'success';
+  const inProgress = d => !FINAL.includes(statusOf(d)) && Date.now() - new Date(d.created_on).getTime() < IN_PROGRESS_GRACE_MS;
 
   for (const env of envs) {
     const keep = Math.max(1, Number.parseInt(keepCfg[env], 10) || DEFAULT_KEEP[env]);
@@ -124,10 +127,16 @@ async function main() {
       }
       const keepIds = new Set(deployments.slice(0, keep).map(d => d.id));
       const toDelete = deployments.filter(d =>
-        !keepIds.has(d.id) && !protectedIds.has(d.id) && !failedIds.has(d.id) && FINAL.includes(statusOf(d)));
+        !keepIds.has(d.id) && !protectedIds.has(d.id) && !failedIds.has(d.id) && !inProgress(d));
       remaining = deployments.length;
 
-      if (round === 1) info(`   ..  trovati ${deployments.length} deploy`);
+      if (round === 1) {
+        const states = {};
+        for (const d of deployments) states[statusOf(d)] = (states[statusOf(d)] || 0) + 1;
+        const running = deployments.filter(d => !keepIds.has(d.id) && !protectedIds.has(d.id) && inProgress(d)).length;
+        info(`   ..  trovati ${deployments.length} deploy (stati: ${Object.entries(states).map(([k, v]) => `${k} ${v}`).join(', ')})`);
+        info(`   ..  tengo: ${keepIds.size} più recenti, ${[...protectedIds].filter(id => !keepIds.has(id) && deployments.some(d => d.id === id)).length} online, ${running} in corso; da cancellare ${toDelete.length}`);
+      }
       if (!toDelete.length) break;
 
       if (dryRun) {

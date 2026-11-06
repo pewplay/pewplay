@@ -195,6 +195,7 @@ jobs:
           sparse-checkout: |
             src
             site.config.js
+            package.json
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-node@v5
