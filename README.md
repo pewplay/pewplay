@@ -16,6 +16,8 @@ Vale per **tutti** i repo, sia `pewplay` (il sito) sia i giochi:
 - Lavori sempre su `preview`, controlli l'anteprima, poi fai il **merge in `main`** → si aggiorna il sito pubblico.
 - **Tutto automatico**: ogni push su `main` o `preview` (del sito o di un gioco) ricostruisce e pubblica il sito corrispondente in 1–2 minuti. Il merge `preview` → `main` è un push su `main`, quindi aggiorna la produzione da solo.
 - Ogni notte parte un controllo su entrambi i siti: pubblica **solo se qualcosa è cambiato** (es. un badge "New" scaduto). Se il sito online è già identico, il deploy viene saltato. Dal pulsante manuale invece pubblica sempre.
+- Dopo ogni deploy (e ogni notte) i **vecchi deploy vengono cancellati** da Cloudflare: restano solo gli ultimi 3 di produzione e gli ultimi 3 di anteprima (`site.config.js → cloudflare.keepDeployments`). Il deploy online non viene mai cancellato.
+- Pubblica **solo GitHub Actions**: il progetto Pages non deve essere collegato al repo da Cloudflare (vedi Configurazione iniziale), altrimenti ogni push viene pubblicato due volte.
 
 ```
  push su preview  ->  sito di anteprima  ->  (controlli)  ->  merge in main  ->  sito pubblico
@@ -40,7 +42,7 @@ Puoi anche provare tutto in locale prima di pushare (vedi [Comandi](#comandi)).
 ### 1. Cloudflare
 1. **Account ID**: dashboard → *Workers & Pages* → colonna di destra (32 caratteri; non è lo Zone ID del dominio).
 2. **API token**: *My Profile → API Tokens → Create Token → Custom token* con permesso **Account → Cloudflare Pages → Edit** e *Account Resources* = il tuo account (o *All accounts*).
-3. Il progetto Pages (`cloudflare.pagesProject` in `site.config.js`) viene creato in automatico al primo deploy.
+3. Il progetto Pages (`cloudflare.pagesProject` in `site.config.js`) viene creato in automatico al primo deploy, **senza** collegamento a Git: lo pubblica solo GitHub Actions. Non collegarlo al repo da Cloudflare (*Connect to Git*), altrimenti ogni push genera due deploy. Se un progetto è già collegato: *Settings → Builds & deployments → Branch control* → disattiva i deploy automatici e metti le anteprime su *None*, oppure crea un progetto nuovo (cambia `pagesProject` e `previewUrl`) e spostaci il dominio.
 4. Dopo il primo deploy: progetto → *Custom domains* → aggiungi `www.pewplay.com`. Per un indirizzo tuo anche per l'anteprima: record DNS CNAME `preview` → `preview.<progetto>.pages.dev`.
 5. Facoltativo: progetto → *Settings → Access policy* per mettere l'anteprima dietro login (Cloudflare Access, gratis fino a 50 utenti).
 
@@ -80,25 +82,22 @@ npm run serve                      # serve dist/ in locale
 npm run deploy                     # build + deploy pubblico dal tuo PC (serve .env con i token Cloudflare)
 npm run deploy:preview             # build + deploy dell'anteprima dal tuo PC
 npm run deploy:check               # controlla solo token Cloudflare, account e progetto
+npm run cleanup:dry                # mostra quali vecchi deploy verrebbero cancellati
+npm run cleanup                    # cancella i vecchi deploy (tiene gli ultimi 3 + 3)
 ```
 
 Per la build da GitHub in locale conviene un token (`cp .env.example .env` e compila `GH_TOKEN`), altrimenti si finisce presto nel limite di 60 richieste/ora dell'API.
 
 Opzioni di `src/build.js`: `--target production|preview`, `--games <cartella>`, `--only a,b`, `--out <cartella>`, `--base-url <url>`.
 
-## Preparare il branch preview dei giochi esistenti
+## package-lock.json
 
-Per portare in blocco i giochi già presenti nell'organizzazione alla struttura attuale:
+`package-lock.json` blocca le versioni esatte delle dipendenze (sharp, wrangler…): ogni build usa le stesse e la cache funziona. Per crearlo o aggiornarlo:
 
-```bash
-npm run prepare-previews             # prova: prepara tutto in .migration/ e mostra cosa cambierebbe
-npm run prepare-previews -- --apply  # commit e push del branch preview di ogni gioco
-npm run prepare-previews -- --only angle,dino   # solo alcuni repo
-```
+- **da GitHub**: *Actions → Crea package-lock → Run workflow*, scegliendo il branch (prima `preview`, poi fai il merge in `main`). Fa il commit da solo;
+- **dal PC**: `npm install` e poi commit di `package-lock.json`.
 
-Per ogni gioco crea (o aggiorna) il branch `preview` partendo da `main`, aggiunge il workflow PewPlay e aggiorna `game.json` al formato attuale. **Non tocca mai `main`**: il merge lo fai tu, gioco per gioco. Si può rilanciare quante volte vuoi: i repo già a posto vengono saltati.
-
-Serve git con permesso di push sull'organizzazione, incluso il permesso `workflow` (con GitHub CLI: `gh auth refresh -s workflow`).
+Rifallo quando cambi le dipendenze in `package.json`.
 
 ## Lanciare la build a mano
 
@@ -116,6 +115,7 @@ Repo `pewplay` → **Actions → Deploy → Run workflow** → *entrambi*, *prod
 | GitHub o Cloudflare non raggiungibili, token non validi, `site.config.js` sbagliato, più di 20.000 file | **Errore**: non si pubblica niente, online resta la versione precedente. Il messaggio dice cosa controllare. |
 | Upload su Cloudflare fallito | Un secondo tentativo automatico dopo 10 secondi, poi **errore**. |
 | Il sito online è già identico alla build | Deploy saltato (non consuma deploy del piano gratuito). |
+| Pulizia dei vecchi deploy non riuscita | **Avviso**: il deploy appena fatto resta valido, la pulizia viene ritentata alla run successiva. |
 | Dal gioco non si riesce ad avvisare il sito (secret mancante/scaduto) | **Avviso** nella run del gioco; il sito si aggiorna alla build notturna o a mano. |
 
 Avvisi ed errori compaiono in cima alla pagina della run su GitHub Actions e nel riepilogo, con la tabella di tutti i giochi.
@@ -177,6 +177,7 @@ pewplay/
 │   ├── assets/             ← CSS e JS del sito
 │   ├── check-game.js       ← `npm run check` (usato anche dalla Action dei giochi)
 │   ├── deploy.js           ← pubblica dist/ su Cloudflare Pages (con controllo credenziali)
+│   ├── cleanup.js          ← cancella i vecchi deploy da Cloudflare Pages
 │   ├── dev.js / serve.js   ← anteprima locale
 │   └── config.js           ← legge config, argomenti e .env
 ├── public/                 ← favicon, icone, og-image.png: copiati così come sono
@@ -204,7 +205,7 @@ dist/
 
 ## Limiti del piano gratuito
 
-- **Cloudflare Pages**: 500 deploy/mese, max 20.000 file per sito, max 25 MB per file. La build si ferma con un messaggio chiaro se li superi.
+- **Cloudflare Pages**: 500 deploy/mese, max 20.000 file per sito, max 25 MB per file. La build si ferma con un messaggio chiaro se li superi. Cancellare i vecchi deploy tiene in ordine la lista ma non restituisce deploy al limite mensile.
 - **GitHub Actions**: minuti illimitati sui repo pubblici.
 
 ## Privacy

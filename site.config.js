@@ -28,6 +28,9 @@ export default {
   // Cloudflare Pages
   cloudflare: {
     pagesProject: 'pewplay',        // nome del progetto Pages
+    // Quanti deploy tenere su Cloudflare: i più vecchi vengono cancellati dopo ogni deploy.
+    // Il deploy online non viene mai cancellato.
+    keepDeployments: { production: 3, preview: 3 },
   },
 
   // Pubblicità e statistiche (attive SOLO sul sito pubblico, mai in preview)

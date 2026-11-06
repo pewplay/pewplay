@@ -7,6 +7,9 @@
 #   - push su main / preview di questo repo      → ricostruisce il sito corrispondente
 #   - push su main / preview di un gioco         → idem (il gioco avvisa questo repo)
 #   - ogni notte                                 → entrambi, ma pubblica solo se qualcosa è cambiato
+#
+# Dopo ogni deploy (anche quando viene saltato perché non serve) cancella i vecchi deploy
+# su Cloudflare e tiene solo gli ultimi (site.config.js → cloudflare.keepDeployments).
 #   - a mano: Actions → Deploy → Run workflow    → scegli tu cosa ricostruire
 #
 # Secrets richiesti (Settings → Secrets and variables → Actions):
@@ -120,8 +123,15 @@ jobs:
           path: node_modules
           key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
 
+      # Con package-lock.json installa sempre le stesse versioni (npm ci); senza, usa npm install
       - name: Installa dipendenze
-        run: npm install --no-audit --no-fund
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            echo "::warning title=Manca package-lock.json::Lancia una volta Actions → Crea package-lock → Run workflow (vedi README)."
+            npm install --no-audit --no-fund
+          fi
 
       # I giochi scaricati restano in cache: vengono riscaricati solo quelli con nuovi commit
       - name: Cache giochi
@@ -143,3 +153,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         # Salta il deploy se online c'è già la stessa versione; se lo lanci a mano pubblica sempre.
         run: node src/deploy.js --target ${{ matrix.target }} ${{ github.event_name == 'workflow_dispatch' && '--force' || '' }}
+
+      # Tiene su Cloudflare solo gli ultimi deploy (site.config.js → cloudflare.keepDeployments).
+      # Se la pulizia non riesce il deploy resta valido: ci riprova alla run successiva.
+      - name: Cancella i vecchi deploy da Cloudflare
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node src/cleanup.js --target ${{ matrix.target }}

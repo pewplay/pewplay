@@ -42,6 +42,13 @@ function validateConfig(c) {
   if (!c.cloudflare || !/^[a-z0-9][a-z0-9-]{0,57}$/.test(c.cloudflare.pagesProject || '')) {
     problems.push('"cloudflare.pagesProject" deve contenere solo lettere minuscole, numeri e trattini');
   }
+  const keep = c.cloudflare && c.cloudflare.keepDeployments;
+  if (keep !== undefined) {
+    const okNum = v => v === undefined || (Number.isInteger(v) && v >= 1);
+    if (typeof keep !== 'object' || !okNum(keep.production) || !okNum(keep.preview)) {
+      problems.push('"cloudflare.keepDeployments" deve essere tipo { production: 3, preview: 3 } (numeri interi da 1 in su)');
+    }
+  }
   if (c.adsensePublisherId && !/^(ca-)?pub-\d{10,20}$/.test(c.adsensePublisherId)) problems.push('"adsensePublisherId" deve essere tipo pub-1234567890123456 (oppure vuoto)');
   if (c.gaMeasurementId && !/^G-[A-Z0-9]+$/.test(c.gaMeasurementId)) problems.push('"gaMeasurementId" deve essere tipo G-XXXXXXXXXX (oppure vuoto)');
   if (!c.privacy || !c.privacy.updated) problems.push('"privacy.updated" è vuoto');

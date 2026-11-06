@@ -21,5 +21,3 @@ Thumbs.db
 .idea/
 *.log
 
-# Cartella di lavoro di tools/prepare-preview-branches.js
-.migration/
